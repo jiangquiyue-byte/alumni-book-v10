@@ -1,0 +1,3 @@
+<FilesMatch "^(_init\.php|generate\.php)$">
+  Require all denied
+</FilesMatch>

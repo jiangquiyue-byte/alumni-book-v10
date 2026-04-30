@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>同学录 · 青春回忆</title>
+<!--
+  ┌─────────────────────────────────────────────────────┐
+  │  Layer 结构说明                                       │
+  │  Layer 1: #background-layer   暗色木质纹理背景         │
+  │  Layer 2: #sticker-layer      无（首页不用贴纸层）      │
+  │  Layer 3: #book-wrap          书本 3D 动画            │
+  │           #page-wrap          登录表单                │
+  │  Layer 4: #overlay-layer      萤火虫漂浮效果           │
+  └─────────────────────────────────────────────────────┘
+-->
+<link rel="stylesheet" href="assets/css/common.css">
+<style>
+  /* ── 首页专属样式 ── */
+  html, body { overflow: hidden; height: 100%; }
+
+  /* ── Layer 1: 暗色背景 ── */
+  #background-layer {
+    position: fixed; inset: 0;
+    z-index: 0;
+    background:
+      repeating-linear-gradient(92deg, transparent 0px, transparent 3px, rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px),
+      repeating-linear-gradient(180deg, transparent 0px, transparent 60px, rgba(0,0,0,0.03) 60px, rgba(0,0,0,0.03) 61px),
+      linear-gradient(160deg, #2a1506 0%, #1a0e04 20%, #2e1a08 35%, #180c03 50%, #2c1808 65%, #1e1005 80%, #251408 100%);
+    pointer-events: none;
+  }
+  /* 烛光呼吸 */
+  #background-layer::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 45%, rgba(120,70,20,0.14) 0%, transparent 65%);
+    animation: candleBreath 4s ease-in-out infinite alternate;
+  }
+  @keyframes candleBreath {
+    0%   { opacity: 0.4; }
+    50%  { opacity: 0.8; }
+    100% { opacity: 0.5; }
+  }
+
+  /* ── Layer 2: 贴纸层（首页留空，后续可加入装饰贴纸） ── */
+  #sticker-layer {
+    position: absolute; inset: 0;
+    z-index: 1;             /* 高于背景伪元素，低于内容层 */
+    pointer-events: none;
+    overflow: visible;
+  }
+  /* 示例贴纸放置位置（注释标记，后续手动添加）：
+     右上角装饰: position: absolute; top: 60px; right: 40px;
+     左下角装饰: position: absolute; bottom: 80px; left: 30px;
+  */
+
+  /* ── Layer 3: 书本动画 + 登录表单 ── */
+  #book-wrap {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 20;
+    perspective: 1500px; perspective-origin: 50% 50%;
+    transition: opacity 0.7s ease;
+  }
+  #book-wrap.fadeout { opacity: 0; pointer-events: none; }
+
+  #book-scene {
+    transform-style: preserve-3d;
+    transform: scale(0.5) translateY(40px);
+    transition: transform 2.2s cubic-bezier(0.22, 0.1, 0.36, 1);
+  }
+  #book-scene.settled {
+    transform: scale(1.4) translateY(0);
+    animation: gentleFloat 3.5s ease-in-out infinite 2.2s;
+  }
+  @keyframes gentleFloat {
+    0%, 100% { transform: scale(1.4) translateY(0px); }
+    50%       { transform: scale(1.4) translateY(-6px); }
+  }
+
+  #book { position: relative; width: 240px; height: 320px; transform-style: preserve-3d; }
+
+  .book-inner-page {
+    position: absolute; inset: 0; border-radius: 2px 8px 8px 2px;
+    overflow: hidden; z-index: 1; display: none;
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.75 0 0 0 0 0.63 0 0 0 0 0.42 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23f)'/%3E%3C/svg%3E"),
+      radial-gradient(ellipse at 30% 20%, #f7ead8 0%, #f0ddbf 40%, #e8d0a8 100%);
+    box-shadow: inset 6px 0 18px rgba(0,0,0,0.35), inset -2px 0 8px rgba(100,60,10,0.15);
+  }
+  .book-inner-page::after {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(to bottom, transparent 0px, transparent 19px, rgba(160,120,60,0.2) 19px, rgba(160,120,60,0.2) 20px);
+  }
+
+  .book-cover {
+    position: absolute; inset: 0; border-radius: 2px 8px 8px 2px; z-index: 2;
+    transform-origin: left center; transform-style: flat;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    transition: transform 2.2s cubic-bezier(0.15, 0.85, 0.25, 1.0), box-shadow 0.3s ease;
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E"),
+      linear-gradient(160deg, #6b3a18 0%, #4a2208 15%, #5c2e10 30%, #3d1a06 45%, #562a0e 60%, #402010 75%, #5a2c10 90%, #3a1808 100%);
+    box-shadow:
+      inset 3px 0 8px rgba(0,0,0,0.5),
+      inset -2px 0 6px rgba(100,55,15,0.3),
+      inset 0 3px 8px rgba(0,0,0,0.3),
+      inset 0 -3px 8px rgba(0,0,0,0.4),
+      6px 12px 50px rgba(0,0,0,0.75),
+      2px 4px 16px rgba(0,0,0,0.5);
+  }
+  #book.open .book-cover {
+    transform: rotateY(-162deg);
+    box-shadow: inset 3px 0 8px rgba(0,0,0,0.5), inset -2px 0 6px rgba(100,55,15,0.3);
+  }
+
+  .cover-light-sweep {
+    position: absolute; inset: 0; border-radius: 2px 8px 8px 2px;
+    z-index: 5; pointer-events: none;
+    background: linear-gradient(120deg, transparent 0%, rgba(255,220,120,0) 30%, rgba(255,220,120,0.15) 50%, rgba(255,220,120,0) 70%, transparent 100%);
+    background-size: 300% 100%; background-position: 100% 0;
+    opacity: 0; transition: opacity 0.5s ease;
+  }
+  #book.open .cover-light-sweep { opacity: 1; animation: lightSweep 2.2s ease-out forwards; }
+  @keyframes lightSweep { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+
+  .book-cover::before {
+    content: ''; position: absolute; left: 20px; top: 0; bottom: 0; width: 1px;
+    background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.5) 15%, rgba(0,0,0,0.45) 85%, transparent 100%);
+    z-index: 3;
+  }
+
+  .cover-border {
+    position: absolute; inset: 12px 12px 12px 26px;
+    border: 2px solid rgba(180,130,50,0.3); border-radius: 2px; pointer-events: none; z-index: 2;
+  }
+  .cover-border::before { content: ''; position: absolute; inset: 4px; border: 1px solid rgba(180,130,50,0.15); border-radius: 1px; }
+  .cover-border::after  { content: '❧'; position: absolute; bottom: -10px; right: -10px; color: rgba(180,130,50,0.28); font-size: 18px; transform: rotate(90deg); }
+
+  .spine-knot {
+    position: absolute; left: 0; width: 23px; height: 9px; transform: translateY(-50%);
+    pointer-events: none; z-index: 3;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.16) 0%, rgba(200,130,50,0.1) 20%, rgba(60,20,5,0.14) 40%, rgba(0,0,0,0.36) 58%, rgba(0,0,0,0.5) 72%, rgba(255,255,255,0.04) 100%);
+    border-top: 1px solid rgba(255,255,255,0.22); border-bottom: 1px solid rgba(0,0,0,0.62);
+  }
+
+  .corner-brass { position: absolute; width: 34px; height: 34px; z-index: 3; pointer-events: none; }
+  .corner-brass::before {
+    content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 8px; border-radius: 0 2px 2px 0;
+    background: linear-gradient(to left, rgba(80,50,5,0.2) 0%, #faf3b0 8%, #e8c838 22%, #b08820 42%, #d4ad38 55%, #f0dc60 64%, #a87c1c 78%, #c9a840 90%, rgba(180,130,30,0.6) 100%);
+    box-shadow: inset -2px 0 3px rgba(255,255,255,0.4), 2px 0 5px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,0,0,0.25);
+  }
+  .corner-brass::after {
+    content: ''; position: absolute; right: 0; left: 0; height: 8px;
+    background: linear-gradient(to bottom, rgba(80,50,5,0.2) 0%, #faf3b0 8%, #e8c838 22%, #b08820 42%, #d4ad38 55%, #f0dc60 64%, #a87c1c 78%, #c9a840 90%, rgba(180,130,30,0.6) 100%);
+    box-shadow: inset 0 -2px 3px rgba(255,255,255,0.4), 0 2px 5px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,0,0,0.25);
+  }
+  .corner-brass.tr { top: 0; right: 0; }
+  .corner-brass.br { bottom: 0; right: 0; }
+  .corner-brass.br::after { bottom: 0; border-radius: 0 0 2px 0; }
+
+  .book-nameplate {
+    position: absolute; top: 50%; left: 50%; transform: translate(-44%, -50%);
+    padding: 22px 22px 16px; z-index: 2; text-align: center; min-width: 136px;
+    background: rgba(0,0,0,0.2); border: 2px dashed rgba(185,138,55,0.5);
+    box-shadow:
+      inset 0 2px 10px rgba(0,0,0,0.5),
+      inset 0 -2px 6px rgba(0,0,0,0.28),
+      0 0 0 1px rgba(0,0,0,0.7),
+      0 0 0 5px rgba(32,14,3,0.95),
+      0 0 0 6px rgba(185,138,55,0.28),
+      0 3px 12px rgba(0,0,0,0.45);
+  }
+  .book-title .main {
+    font-family: 'Ma Shan Zheng', cursive; font-size: 46px; letter-spacing: 0.15em; line-height: 1;
+    background: linear-gradient(180deg, #f5e4a8 0%, #c9a84c 40%, #e8c96a 55%, #9a7020 70%, #c9a84c 85%, #f5e4a8 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    filter: drop-shadow(0 1px 3px rgba(0,0,0,0.65)); display: block; position: relative;
+  }
+  .book-title .main::after {
+    content: '同学录'; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(105deg, transparent 35%, rgba(255,240,180,0.4) 45%, rgba(255,255,255,0.55) 50%, rgba(255,240,180,0.4) 55%, transparent 65%);
+    background-size: 250% 100%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    animation: shimmerGold 4s ease-in-out infinite 2.5s;
+    font-family: 'Ma Shan Zheng', cursive; font-size: 46px; letter-spacing: 0.15em; line-height: 1;
+  }
+  @keyframes shimmerGold { 0% { background-position: 150% center; } 40%, 100% { background-position: -50% center; } }
+  .book-title .sub { font-family: 'ZCOOL XiaoWei', serif; font-size: 10px; letter-spacing: 0.4em; color: rgba(200,165,80,0.55); display: block; margin-top: 10px; }
+  .book-year { position: absolute; bottom: 16px; left: 50%; transform: translateX(-44%); font-family: 'ZCOOL XiaoWei', serif; font-size: 10px; letter-spacing: 0.3em; color: rgba(200,165,80,0.4); z-index: 2; }
+
+  .cover-vignette {
+    position: absolute; inset: 0; pointer-events: none; z-index: 4; border-radius: 2px 8px 8px 2px;
+    background: radial-gradient(ellipse at 52% 46%, transparent 18%, rgba(5,2,0,0.16) 45%, rgba(4,1,0,0.42) 68%, rgba(3,1,0,0.68) 85%, rgba(1,0,0,0.8) 100%);
+  }
+
+  /* 登录页面层 */
+  #page-wrap {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 25; opacity: 0; pointer-events: none;
+    transition: opacity 0.9s ease;
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.75 0 0 0 0 0.63 0 0 0 0 0.42 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23f)'/%3E%3C/svg%3E"),
+      radial-gradient(ellipse at 30% 20%, #f7ead8 0%, #f0ddbf 40%, #e8d0a8 100%);
+  }
+  #page-wrap::before {
+    content: ''; position: absolute; inset: 0;
+    background:
+      linear-gradient(to right, rgba(100,60,10,0.1) 0%, transparent 8%, transparent 92%, rgba(100,60,10,0.1) 100%),
+      linear-gradient(to bottom, rgba(100,60,10,0.07) 0%, transparent 6%, transparent 94%, rgba(100,60,10,0.07) 100%);
+    pointer-events: none;
+  }
+  #page-wrap::after {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(to bottom, transparent 0px, transparent 35px, rgba(160,120,60,0.1) 35px, rgba(160,120,60,0.1) 36px);
+    pointer-events: none;
+  }
+  #page-wrap.visible { opacity: 1; pointer-events: all; }
+
+  #page-content {
+    position: relative; text-align: center; z-index: 2;
+    max-width: 440px; padding: 0 28px; width: 100%;
+  }
+  #page-content > * { opacity: 0; transform: translateY(22px); transition: opacity 0.65s ease, transform 0.65s cubic-bezier(0.22,1,0.36,1); }
+  #page-content > *.line-visible { opacity: 1; transform: translateY(0); }
+
+  .top-ornament {
+    display: flex; align-items: center; gap: 14px; justify-content: center;
+    margin-bottom: 34px; color: rgba(140,90,30,0.45); font-size: 13px; letter-spacing: 0.2em;
+  }
+  .top-ornament::before, .top-ornament::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(to right, transparent, rgba(140,90,30,0.35), transparent); max-width: 80px;
+  }
+  .page-tagline { font-family: 'ZCOOL XiaoWei', serif; font-size: 12px; letter-spacing: 0.55em; color: rgba(120,80,30,0.5); margin-bottom: 18px; }
+  .page-heading { font-family: 'Ma Shan Zheng', cursive; font-size: 34px; color: var(--ink); line-height: 1.5; margin-bottom: 8px; text-shadow: 1px 2px 4px rgba(0,0,0,0.07); }
+  .page-sub { font-family: 'Noto Serif SC', serif; font-weight: 300; font-size: 13px; color: rgba(80,50,20,0.55); letter-spacing: 0.1em; line-height: 2; margin-bottom: 44px; }
+
+  /* 输入框 */
+  .input-group { position: relative; margin-bottom: 24px; }
+  #name-input {
+    width: 100%; padding: 15px 22px;
+    background: rgba(255,255,255,0.45);
+    border: none; border-bottom: 2px solid rgba(100,60,15,0.28); border-top: 1px solid rgba(255,255,255,0.75);
+    border-radius: 4px 4px 0 0;
+    font-family: 'Noto Serif SC', serif; font-size: 16px; color: var(--ink);
+    text-align: center; letter-spacing: 0.1em; outline: none;
+    backdrop-filter: blur(2px); transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
+    caret-color: var(--book-light);
+  }
+  #name-input::placeholder { color: rgba(120,80,30,0.38); }
+  #name-input:focus { background: rgba(255,255,255,0.62); border-bottom-color: rgba(100,60,15,0.6); box-shadow: 0 4px 16px rgba(80,40,10,0.08); }
+  .input-line {
+    position: absolute; bottom: 0; left: 50%; width: 0; height: 2px;
+    background: linear-gradient(to right, var(--book-light), var(--gold), var(--book-light));
+    transform: translateX(-50%); transition: width 0.4s cubic-bezier(0.22,1,0.36,1);
+  }
+  #name-input:focus ~ .input-line { width: 100%; }
+  .error-msg { color: var(--red-seal); font-size: 12px; margin-top: 7px; opacity: 0; transition: opacity 0.3s; font-family: 'ZCOOL XiaoWei', serif; letter-spacing: 0.05em; }
+  .error-msg.show { opacity: 1; }
+
+  #enter-btn {
+    position: relative; padding: 14px 52px;
+    background: linear-gradient(160deg, #5c3010 0%, #3d1e08 100%);
+    color: var(--gold-pale); border: 1px solid rgba(180,130,50,0.3); border-radius: 3px;
+    font-family: 'Ma Shan Zheng', cursive; font-size: 20px; letter-spacing: 0.3em;
+    cursor: pointer; overflow: hidden; transition: transform 0.2s, box-shadow 0.3s;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.07);
+  }
+  #enter-btn::before { content: ''; position: absolute; inset: 0; background: linear-gradient(160deg, rgba(200,160,60,0.1), transparent); opacity: 0; transition: opacity 0.3s; }
+  #enter-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,0.32); }
+  #enter-btn:hover::before { opacity: 1; }
+  #enter-btn:active { transform: translateY(0); }
+  .ripple { position: absolute; border-radius: 50%; background: rgba(200,160,60,0.22); transform: scale(0); animation: rippleAnim 0.5s linear; pointer-events: none; }
+  @keyframes rippleAnim { to { transform: scale(4); opacity: 0; } }
+
+  .bottom-ornament { margin-top: 40px; color: rgba(140,90,30,0.25); font-size: 16px; letter-spacing: 0.5em; }
+
+  /* 离开动画 */
+  #page-wrap.fade-out { animation: pageLeave 0.85s cubic-bezier(0.4,0,1,1) forwards; }
+  @keyframes pageLeave { 0% { opacity: 1; filter: brightness(1); } 50% { opacity: 0.5; filter: brightness(1.3) sepia(0.25); } 100% { opacity: 0; filter: brightness(2) sepia(1); } }
+
+  /* ── Layer 4: 萤火虫漂浮层 ── */
+  #overlay-layer {
+    position: fixed; inset: 0;
+    z-index: 100;
+    pointer-events: none;
+    overflow: hidden;
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ Layer 1: Background UI Layer ══ -->
+<div id="background-layer">
+  <!-- 贴纸嵌套在背景容器内，相对于背景定位，随背景同步缩放/位移 -->
+  <div id="sticker-layer">
+  <!--
+    ★ 在此处添加首页装饰贴纸 ★
+    示例：
+    <img class="sticker sticker--float" src="assets/images/stickers/star.png"
+         style="top: 8%; right: 6%; width: 60px; --r: 10deg;" alt="">
+    <img class="sticker sticker--sway"  src="assets/images/stickers/heart.png"
+         style="bottom: 12%; left: 5%; width: 48px; --r: -8deg;" alt="">
+  -->
+  </div>
+</div>
+
+<!-- ══ Layer 3: 书本动画层 ══ -->
+<div id="book-wrap">
+  <div id="book-scene">
+    <div id="book">
+      <div class="book-inner-page"></div>
+      <div class="book-cover">
+        <div class="cover-light-sweep"></div>
+        <div class="cover-vignette"></div>
+        <div class="cover-border"></div>
+        <div class="spine-knot" style="top: 20%"></div>
+        <div class="spine-knot" style="top: 38%"></div>
+        <div class="spine-knot" style="top: 56%"></div>
+        <div class="spine-knot" style="top: 74%"></div>
+        <div class="corner-brass tr"></div>
+        <div class="corner-brass br"></div>
+        <div class="book-nameplate">
+          <div class="book-title">
+            <span class="main">同学录</span>
+            <span class="sub">CLASSMATE · MEMORIES</span>
+          </div>
+        </div>
+        <div class="book-year">岁月留痕·青春永驻</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Layer 3: 登录表单层 ══ -->
+<div id="page-wrap">
+  <div class="watermark">同学录</div>
+  <div id="page-content">
+    <div class="top-ornament">❦ 青 春 · 回 忆 ❦</div>
+    <p class="page-tagline">· CLASS OF MEMORIES ·</p>
+    <h1 class="page-heading">时光荏苒<br>很高兴再次见到你</h1>
+    <p class="page-sub">每一段岁月都值得被铭记<br>让我们一起打开那本尘封的同学录</p>
+    <div class="input-group">
+      <input type="text" id="name-input" placeholder="请输入你的真实姓名" maxlength="20" autocomplete="off">
+      <div class="input-line"></div>
+      <div class="error-msg" id="error-msg">姓名未在同学录中找到，请确认后重试</div>
+    </div>
+    <button id="enter-btn">开 启 回 忆</button>
+    <div class="bottom-ornament">· · ·</div>
+    <div id="index-footer" style="margin-top:24px;text-align:center;font-size:11px;color:rgba(120,80,30,0.3);line-height:2;"></div>
+  </div>
+</div>
+
+<!-- ══ Layer 4: Overlay Effect Layer（萤火虫漂浮） ══ -->
+<div id="overlay-layer"></div>
+
+<script src="assets/js/common.js?v=10.0.0"></script>
+<script src="assets/js/overlay.js?v=10.0.0"></script>
+<script>
+(function () {
+  const bookWrap    = document.getElementById('book-wrap');
+  const bookScene   = document.getElementById('book-scene');
+  const book        = document.getElementById('book');
+  const pageWrap    = document.getElementById('page-wrap');
+  const pageContent = document.getElementById('page-content');
+  const nameInput   = document.getElementById('name-input');
+  const enterBtn    = document.getElementById('enter-btn');
+  const errorMsg    = document.getElementById('error-msg');
+  const overlayLayer = document.getElementById('overlay-layer');
+
+  /* ── 加载同学名单 ── */
+  let classmateList = [];
+  fetch('data/classmates.json')
+    .then(r => r.json())
+    .then(data => { classmateList = data.classmates || []; })
+    .catch(() => { console.warn('无法加载同学名单，将跳过验证'); });
+
+  /* ── 加载全局设置（樱花开关） ── */
+  let indexParticleEnabled = true;
+  let indexParticlePreset  = 'sakura';
+  fetch('data/site_config.json')
+    .then(r => r.json())
+    .then(s => {
+      indexParticleEnabled = s.particles?.index?.enabled !== false;
+      indexParticlePreset  = s.particles?.index?.preset || 'sakura';
+      // 渲染底部备案信息
+      var ft = document.getElementById('index-footer');
+      if (ft && s.footer) {
+        var h = s.footer.copyright || '';
+        if (s.footer.beian) h += (h ? '<br>' : '') + '<a href="' + (s.footer.beianUrl || 'https://beian.miit.gov.cn/') + '" target="_blank" style="color:rgba(120,80,30,0.3);text-decoration:none;">' + s.footer.beian + '</a>';
+        ft.innerHTML = h;
+      }
+    })
+    .catch(() => {});
+
+  /* ── 开场动画时序 ── */
+  function startTimeline() {
+    requestAnimationFrame(() => { bookScene.classList.add('settled'); });
+    setTimeout(() => { book.classList.add('open'); }, 2200);
+    setTimeout(() => {
+      pageWrap.classList.add('visible');
+      // 粒子效果（受后台开关控制，已在页面加载时读取）
+      if (indexParticleEnabled && OverlayPresets[indexParticlePreset]) {
+        const cfg = Object.assign({}, OverlayPresets[indexParticlePreset], { container: overlayLayer });
+        Overlay.init(cfg);
+      }
+    }, 2200);
+    setTimeout(staggerRevealContent, 2700);
+    setTimeout(() => { bookWrap.classList.add('fadeout'); }, 3500);
+  }
+
+  function staggerRevealContent() {
+    const children = pageContent.children;
+    let delay = 0;
+    for (let i = 0; i < children.length; i++) {
+      (function(el, d) {
+        setTimeout(() => {
+          el.classList.add('line-visible');
+          if (el.querySelector && el.querySelector('#name-input')) {
+            setTimeout(() => nameInput.focus(), 400);
+          }
+        }, d);
+      })(children[i], delay);
+      delay += 210;
+    }
+  }
+
+  /* ── 按钮水波纹 ── */
+  enterBtn.addEventListener('click', function (e) {
+    const rect = this.getBoundingClientRect();
+    const r = document.createElement('span');
+    const size = Math.max(rect.width, rect.height);
+    r.className = 'ripple';
+    r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px;`;
+    this.appendChild(r);
+    setTimeout(() => r.remove(), 600);
+    handleEnter();
+  });
+
+  nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') handleEnter(); });
+  nameInput.addEventListener('input', () => errorMsg.classList.remove('show'));
+
+  /* ── 入场逻辑 ── */
+  function handleEnter() {
+    const name = nameInput.value.trim();
+    errorMsg.classList.remove('show');
+
+    if (!name) {
+      shake(nameInput);
+      return;
+    }
+
+    if (classmateList.length > 0 && !classmateList.includes(name)) {
+      errorMsg.classList.add('show');
+      shake(nameInput);
+      return;
+    }
+
+    enterBtn.disabled = true;
+    nameInput.disabled = true;
+    Session.setName(name);
+
+    pageWrap.classList.add('fade-out');
+    setTimeout(() => { window.location.href = 'preface.html'; }, 800);
+  }
+
+  function shake(el) {
+    el.animate([
+      { transform: 'translateX(0)' }, { transform: 'translateX(-7px)' },
+      { transform: 'translateX(7px)' }, { transform: 'translateX(-5px)' },
+      { transform: 'translateX(5px)' }, { transform: 'translateX(0)' }
+    ], { duration: 360, easing: 'ease-out' });
+    el.focus && el.focus();
+  }
+
+  startTimeline();
+})();
+</script>
+</body>
+</html>

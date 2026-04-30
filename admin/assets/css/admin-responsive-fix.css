@@ -1,0 +1,584 @@
+/**
+ * 同学录后台 · 响应式修复 + 贴纸编辑器 v7 样式补充
+ * admin/assets/css/admin-responsive-fix.css
+ *
+ * 本文件补充 admin.css 中缺少的新版贴纸编辑器样式，
+ * 并修复手机端后台的布局和交互问题。
+ * 在 admin.php 的 <head> 中于 admin.css 之后引入。
+ */
+
+/* ══════════════════════════════════════════════════════════════
+   一、贴纸编辑器 v7 核心样式
+   ══════════════════════════════════════════════════════════════ */
+
+/* 全域映射模式布局 */
+.sticker-editor--mapping {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+/* 右侧画布列 */
+.sticker-canvas-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* 贴纸覆盖层上的贴纸元素 */
+.sticker-on-canvas {
+  position: absolute;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  will-change: transform;
+  /* 硬件加速 */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  /* 防止选中文字 */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+}
+
+.sticker-on-canvas:active {
+  cursor: grabbing;
+}
+
+.sticker-on-canvas.selected {
+  outline: 2px solid #e53e3e;
+  outline-offset: 3px;
+  z-index: 12 !important;
+}
+
+.sticker-on-canvas img {
+  display: block;
+  pointer-events: none;
+  width: 100%;
+  height: auto;
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
+/* 选中态：内联删除按钮 */
+.sticker-inline-del {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #e53e3e;
+  color: #fff;
+  border: 2px solid #fff;
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  text-align: center;
+  padding: 0;
+  z-index: 20;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.sticker-inline-del:hover,
+.sticker-inline-del:active {
+  background: #c53030;
+  transform: scale(1.15);
+}
+
+/* 选中态：旋转手柄 */
+.sticker-rotate-handle {
+  position: absolute;
+  top: -28px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #4a90e2;
+  border: 2px solid #fff;
+  cursor: grab;
+  z-index: 20;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  touch-action: none;
+  transition: background 0.15s;
+}
+
+.sticker-rotate-handle:active {
+  cursor: grabbing;
+  background: #2b6cb0;
+}
+
+/* 选中态：缩放手柄（右下角） */
+.sticker-scale-handle {
+  position: absolute;
+  bottom: -10px;
+  right: -10px;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  background: #4a90e2;
+  border: 2px solid #fff;
+  cursor: nwse-resize;
+  z-index: 20;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  touch-action: none;
+  transition: background 0.15s;
+}
+
+.sticker-scale-handle:active {
+  background: #2b6cb0;
+}
+
+/* 贴纸库：待放置状态高亮 */
+.sticker-thumb--pending {
+  outline: 2px solid #e53e3e !important;
+  outline-offset: 2px !important;
+  background: rgba(229, 62, 62, 0.12) !important;
+}
+
+/* 待放置提示条 */
+#sticker-pending-tip {
+  display: none;
+  background: rgba(229, 62, 62, 0.15);
+  border: 1px solid #e53e3e;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 11px;
+  color: #e53e3e;
+  margin-bottom: 8px;
+  text-align: center;
+  animation: fadeIn 0.2s ease;
+}
+
+/* 右键上下文菜单 */
+#sticker-ctx-menu {
+  position: fixed;
+  background: var(--bg2, #1e1e1e);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  padding: 4px 0;
+  z-index: 99999;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  min-width: 120px;
+  font-size: 13px;
+  animation: fadeIn 0.12s ease;
+}
+
+/* 网格辅助线 canvas */
+#sticker-grid-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* 坐标显示 */
+#sticker-coord {
+  font-size: 11px;
+  color: var(--gold, #c9a84c);
+  font-family: monospace;
+  padding: 4px 4px 0;
+  min-height: 18px;
+  letter-spacing: 0.03em;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   二、手机端后台响应式修复（≤768px）
+   ══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+
+  /* ── 贴纸编辑器：强制单列布局 ─────────────────────────── */
+  .sticker-editor--mapping {
+    grid-template-columns: 1fr !important;
+    gap: 14px;
+  }
+
+  /* 左侧控制面板在手机端全宽 */
+  .sticker-controls {
+    width: 100%;
+    order: 2; /* 控制面板移到画布下方 */
+  }
+
+  /* 画布列在手机端优先显示 */
+  .sticker-canvas-col {
+    order: 1;
+    width: 100%;
+  }
+
+  /* 滚动容器高度适配手机屏幕 */
+  #sticker-scroll-wrap {
+    height: calc(100vw * 2.16) !important; /* 近似 390:844 比例 */
+    max-height: 80vh !important;
+  }
+
+  /* 贴纸库在手机端增大触摸目标 */
+  .sticker-library {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 10px;
+    max-height: 200px;
+  }
+
+  .sticker-thumb {
+    min-height: 52px; /* 最小 44px 触摸目标 */
+  }
+
+  /* 删除按钮在手机端始终显示 */
+  .sticker-del-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.9;
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 13px !important;
+  }
+
+  /* 内联删除按钮在手机端放大 */
+  .sticker-inline-del {
+    width: 26px !important;
+    height: 26px !important;
+    top: -13px !important;
+    right: -13px !important;
+    font-size: 13px !important;
+  }
+
+  /* 旋转手柄在手机端放大 */
+  .sticker-rotate-handle {
+    width: 24px !important;
+    height: 24px !important;
+    top: -32px !important;
+  }
+
+  /* 缩放手柄在手机端放大 */
+  .sticker-scale-handle {
+    width: 24px !important;
+    height: 24px !important;
+    bottom: -12px !important;
+    right: -12px !important;
+  }
+
+  /* D-Pad 在手机端放大 */
+  .dpad {
+    grid-template-columns: repeat(3, 52px) !important;
+    grid-template-rows: repeat(3, 52px) !important;
+    gap: 5px !important;
+  }
+
+  .dpad-btn {
+    font-size: 20px !important;
+    border-radius: 8px !important;
+  }
+
+  /* 步长按钮在手机端放大 */
+  .step-btn {
+    min-height: 36px !important;
+    padding: 6px 10px !important;
+    font-size: 13px !important;
+  }
+
+  /* 属性面板滑块手机端优化 */
+  #sticker-width-range,
+  #sticker-rotate-range {
+    height: 28px;
+    cursor: pointer;
+  }
+
+  /* 保存按钮手机端放大 */
+  #btn-save-stickers {
+    min-height: 44px !important;
+    font-size: 15px !important;
+  }
+
+  /* 贴纸属性卡片在手机端折叠 */
+  #sticker-props-card .card-body {
+    padding: 12px;
+  }
+
+  /* 网格控制在手机端优化 */
+  #grid-cols-input,
+  #grid-rows-input {
+    min-height: 32px;
+    font-size: 14px !important;
+  }
+
+  /* 待放置提示条在手机端字体放大 */
+  #sticker-pending-tip {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   三、极小屏幕（≤420px）
+   ══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 420px) {
+
+  .sticker-library {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  .dpad {
+    grid-template-columns: repeat(3, 46px) !important;
+    grid-template-rows: repeat(3, 46px) !important;
+  }
+
+  .dpad-btn {
+    font-size: 18px !important;
+  }
+
+  /* 控制面板卡片间距压缩 */
+  .sticker-controls .card {
+    margin-bottom: 10px;
+  }
+
+  .sticker-controls .card-body {
+    padding: 10px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   四、折叠面板（手机端后台菜单展开/收起）
+   ══════════════════════════════════════════════════════════════ */
+
+/* 可折叠面板头部 */
+.collapsible-header {
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  min-height: 44px; /* 最小触摸目标 */
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+}
+
+.collapsible-header:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.collapsible-header:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* 折叠箭头 */
+.collapsible-arrow {
+  font-size: 12px;
+  color: var(--text-muted, rgba(224, 216, 204, 0.3));
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.collapsible-header.open .collapsible-arrow {
+  transform: rotate(180deg);
+}
+
+/* 折叠内容区域 */
+.collapsible-body {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.25s ease-out, opacity 0.2s ease;
+  opacity: 0;
+}
+
+.collapsible-body.open {
+  max-height: 2000px;
+  opacity: 1;
+  transition: max-height 0.35s ease-in, opacity 0.2s ease;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   五、表格横向滚动（手机端）
+   ══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 8px;
+  }
+
+  .table-responsive table {
+    min-width: 480px;
+    white-space: nowrap;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   六、通用触摸优化
+   ══════════════════════════════════════════════════════════════ */
+
+/* 所有可点击元素最小触摸目标 44×44px */
+@media (hover: none), (pointer: coarse) {
+  .btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .btn-sm {
+    min-height: 36px;
+  }
+
+  .nav-item {
+    min-height: 44px;
+  }
+
+  /* 防止双击缩放 */
+  button, a, [role="button"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 贴纸缩略图触摸目标 */
+  .sticker-thumb {
+    min-height: 52px;
+    min-width: 52px;
+  }
+
+  /* 上传区域触摸优化 */
+  .upload-area {
+    min-height: 100px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   七、动画补充
+   ══════════════════════════════════════════════════════════════ */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes stickerPop {
+  0%   { transform: scale(0.5) translateZ(0); opacity: 0; }
+  70%  { transform: scale(1.1) translateZ(0); opacity: 1; }
+  100% { transform: scale(1.0) translateZ(0); opacity: 1; }
+}
+
+/* 贴纸放置时的弹出动画 */
+.sticker-on-canvas.sticker-pop {
+  animation: stickerPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   八、音乐编辑器修复
+   ══════════════════════════════════════════════════════════════ */
+
+/* 上传区域始终可点击（不受 pointer-events:none 影响） */
+#music-upload-section {
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 1;
+}
+
+/* 上传区域内的 file input 铺满 */
+#music-upload-section .upload-area {
+  position: relative;
+  cursor: pointer;
+}
+
+#music-upload-section .upload-area input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+}
+
+/* 音乐设置禁用状态 */
+#music-settings[disabled],
+#music-settings.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* 上传进度条 */
+#music-upload-progress {
+  margin: 10px 0;
+  display: none;
+}
+
+#music-upload-progress.active {
+  display: block;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   九、后台导航菜单手机端优化
+   ══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  /* 侧边栏内容区域可滚动 */
+  .sidebar-nav {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 20px;
+  }
+
+  /* 导航项目增大触摸目标 */
+  .nav-item {
+    padding: 13px 16px;
+    font-size: 14px;
+    min-height: 48px;
+  }
+
+  /* 导航图标放大 */
+  .nav-item .nav-icon {
+    font-size: 18px;
+    width: 24px;
+  }
+
+  /* 侧边栏品牌区域 */
+  .sidebar-brand {
+    padding: 0 16px;
+    min-height: 52px;
+  }
+
+  /* 汉堡按钮放大 */
+  .hamburger-btn {
+    width: 42px !important;
+    height: 42px !important;
+    font-size: 22px !important;
+  }
+
+  /* 顶栏标题截断 */
+  .topbar-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: calc(100vw - 160px);
+  }
+
+  /* 主内容区域内边距 */
+  .main-content {
+    padding: 12px;
+  }
+
+  /* 卡片内边距 */
+  .card-body {
+    padding: 12px;
+  }
+
+  /* 卡片头部 */
+  .card-header {
+    padding: 10px 12px;
+    min-height: 44px;
+  }
+}

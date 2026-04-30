@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>同学录 · 【同学姓名】</title>
+<!--
+  ╔════════════════════════════════════════════════════╗
+  ║  同学录 v4 · 个人主页模板                            ║
+  ║                                                    ║
+  ║  四层结构：                                          ║
+  ║  Layer 1: .background-layer   纸张纹理背景            ║
+  ║  Layer 2: .sticker-layer      装饰贴纸层（此同学专属） ║
+  ║  Layer 3: .form-layer         个人信息表单层          ║
+  ║  Layer 4: .overlay-effect-layer 全局粒子飘落效果      ║
+  ║                                                    ║
+  ║  使用说明：                                          ║
+  ║  1. 将文件重命名为该同学的姓名，如 王小明.html           ║
+  ║  2. 修改 <title> 标签中的姓名                         ║
+  ║  3. 填写各信息字段（搜索 TODO 快速定位）                ║
+  ║  4. 在 Layer 2 添加该同学的专属贴纸                    ║
+  ║  5. 配置背景音乐路径（如需要）                          ║
+  ╚════════════════════════════════════════════════════╝
+-->
+<link rel="stylesheet" href="../assets/css/common.css?v=20260325">
+<link rel="stylesheet" href="../assets/css/form.css?v=20260325">
+<style>
+  html, body { overflow-x: hidden; overflow-y: auto; }
+</style>
+</head>
+<body class="student-page">
+
+<!-- ════════════════════════════════════════
+     Layer 1: Background UI Layer（底层）
+     z-index: 0
+     作用：复古纸张纹理背景，不参与动画
+     ════════════════════════════════════════ -->
+<div class="background-layer"></div>
+
+
+<!-- ════════════════════════════════════════
+     Layer 2: Sticker Layer（装饰贴纸层）
+     z-index: 10
+     作用：该同学的专属装饰元素
+     支持：PNG / GIF / WebP / 任意图片
+     动画 class：
+       .sticker--float   轻微漂浮
+       .sticker--sway    慢速摇摆
+       .sticker--spin    慢速旋转
+       .sticker--bounce  弹跳效果
+     CSS 变量 --r 控制旋转初始角度
+     ════════════════════════════════════════ -->
+<div class="sticker-layer" id="sticker-layer">
+
+  <!--
+  ★★★ 在此处添加该同学的专属贴纸 ★★★
+
+  【位置参考】
+  右上角区域:  top: 5%~15%;  right: 2%~8%
+  左上角区域:  top: 5%~15%;  left: 2%~8%
+  右侧中部:    top: 35%~55%; right: 1%~5%
+  左侧中部:    top: 35%~55%; left: 1%~5%
+  右下角区域:  bottom: 8%~18%; right: 2%~8%
+  左下角区域:  bottom: 8%~18%; left: 2%~8%
+
+  【示例（取消注释使用）】
+
+  <img class="sticker sticker--float"
+       src="../assets/images/stickers/star.png"
+       style="top: 8%; right: 5%; width: 56px; --r: 12deg;"
+       alt="">
+
+  <img class="sticker sticker--sway"
+       src="../assets/images/stickers/heart.png"
+       style="top: 20%; left: 3%; width: 44px; --r: -8deg;"
+       alt="">
+
+  <img class="sticker sticker--bounce"
+       src="../students/stickers/【同学姓名】_sticker1.png"
+       style="bottom: 15%; right: 4%; width: 64px;"
+       alt="">
+
+  <img class="sticker sticker--spin"
+       src="../assets/images/stickers/flower.gif"
+       style="top: 45%; right: 2%; width: 40px;"
+       alt="">
+  -->
+
+</div>
+
+
+<!-- ════════════════════════════════════════
+     Layer 3: Form Layer（表单/内容层）
+     z-index: 20
+     作用：同学录信息展示区
+     ════════════════════════════════════════ -->
+<div class="form-layer">
+  <div class="watermark"><!-- TODO: 可改为该同学的名字 -->同学录</div>
+
+  <!-- 导航栏 -->
+  <nav class="top-nav">
+    <div class="user-greeting" id="user-greeting">同学你好</div>
+    <div class="nav-links">
+      <a class="nav-link" href="../preface.html">前言</a>
+      <a class="nav-link" href="../roster.html">同学录</a>
+      <a class="nav-link" href="../album.html">相册</a>
+    </div>
+  </nav>
+
+  <!-- 个人主页容器（3D 视差卡片） -->
+  <div class="profile-wrap">
+    <div class="parallax-card" id="parallax-card">
+      <div class="parallax-inner">
+
+        <!-- ═══════ 个人头部 Hero ═══════ -->
+        <div class="profile-hero fade-in">
+          <!-- 头像：替换 src 为 ../students/avatars/姓名.jpg -->
+          <div class="avatar-ring" id="avatar">
+            <!-- TODO: 替换为头像图片
+            <img src="../students/avatars/【同学姓名】.jpg" alt="头像">
+            -->
+            <!-- 无头像时显示姓氏 -->
+            <span id="avatar-char">同</span><!-- TODO: 改为姓氏首字 -->
+          </div>
+
+          <!-- TODO: 替换为真实姓名 -->
+          <h1 class="profile-name" id="student-name">【同学姓名】</h1>
+          <!-- TODO: 替换为昵称 -->
+          <p class="profile-nickname">「 【昵称】 」</p>
+          <!-- TODO: 替换为座右铭 -->
+          <p class="profile-motto">「 愿所有的美好如约而至，愿你所求皆如愿。 」</p>
+        </div>
+
+        <!-- ═══════════════════════════════════
+             一、基础信息
+             ════════════════════════════════════ -->
+        <div class="profile-section fade-in">
+          <h2 class="section-title">基础信息</h2>
+          <div class="info-grid">
+
+            <div class="info-item">
+              <span class="info-label">姓名</span>
+              <!-- TODO: 填写姓名 -->
+              <span class="info-value">【姓名】</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">昵称</span>
+              <!-- TODO: 填写昵称 -->
+              <span class="info-value">【昵称】</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">性别</span>
+              <!-- TODO: 填写性别 -->
+              <span class="info-value">【性别】</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">出生日期</span>
+              <!-- TODO: 填写出生日期，如：2008年3月15日 -->
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">学校</span>
+              <!-- TODO: 填写学校名称 -->
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">班级</span>
+              <!-- TODO: 填写班级，如：高三(2)班 -->
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">学号</span>
+              <!-- TODO: 填写学号 -->
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">座位号</span>
+              <!-- TODO: 填写座位号 -->
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">宿舍号</span>
+              <!-- TODO: 填写宿舍号 -->
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">毕业年份</span>
+              <!-- TODO: 填写毕业年份，如：2025 -->
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════
+             二、联系方式
+             ════════════════════════════════════ -->
+        <div class="profile-section fade-in">
+          <h2 class="section-title">联系方式</h2>
+          <div class="info-grid">
+
+            <div class="info-item">
+              <span class="info-label">手机号码</span>
+              <!-- TODO: 如不想公开可留空或写"私信" -->
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">微信号</span>
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">QQ 号</span>
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">电子邮箱</span>
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════
+             三、社交账号
+             ════════════════════════════════════ -->
+        <div class="profile-section fade-in">
+          <h2 class="section-title">社交账号</h2>
+          <div class="info-grid">
+
+            <div class="info-item">
+              <span class="info-label">抖音</span>
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">小红书</span>
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">微博</span>
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">B 站</span>
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════
+             四、个性档案
+             ════════════════════════════════════ -->
+        <div class="profile-section fade-in">
+          <h2 class="section-title">个性档案</h2>
+          <div class="info-grid">
+
+            <div class="info-item">
+              <span class="info-label">MBTI</span>
+              <!-- TODO: 如 INFJ / ENTP / ISFP -->
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">口头禅</span>
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">擅长技能</span>
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">不擅长的事</span>
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">最喜欢科目</span>
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">最讨厌科目</span>
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+          </div>
+
+          <!-- 座右铭（长文本） -->
+          <div class="info-item" style="margin-top: 14px;">
+            <span class="info-label">座右铭</span>
+            <!-- TODO: 填写座右铭 -->
+            <div class="text-block empty">暂未填写</div>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════
+             五、兴趣爱好
+             ════════════════════════════════════ -->
+        <div class="profile-section fade-in">
+          <h2 class="section-title">兴趣爱好</h2>
+          <div class="info-grid">
+
+            <div class="info-item">
+              <span class="info-label">喜欢明星</span>
+              <!-- TODO: 可用 tag-group 展示多个 -->
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">喜欢动漫</span>
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">喜欢电影</span>
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">喜欢歌曲</span>
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">喜欢游戏</span>
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">喜欢食物</span>
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">喜欢颜色</span>
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">喜欢运动</span>
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+          </div>
+
+          <!--
+            ★ 标签展示示例（取消注释使用）：
+            <div style="margin-top: 16px;">
+              <span class="info-label">兴趣标签</span>
+              <div class="tag-group" style="margin-top: 8px;">
+                <span class="tag">追星</span>
+                <span class="tag">追剧</span>
+                <span class="tag">手游</span>
+                <span class="tag">听音乐</span>
+              </div>
+            </div>
+          -->
+        </div>
+
+        <!-- ═══════════════════════════════════
+             六、校园回忆
+             ════════════════════════════════════ -->
+        <div class="profile-section fade-in">
+          <h2 class="section-title">校园回忆</h2>
+
+          <div class="info-item" style="margin-bottom: 18px;">
+            <span class="info-label">最难忘的一件事</span>
+            <!-- TODO: 填写最难忘的一件事 -->
+            <div class="text-block empty">暂未填写</div>
+          </div>
+
+          <div class="info-item" style="margin-bottom: 18px;">
+            <span class="info-label">最难忘的一节课</span>
+            <div class="text-block empty">暂未填写</div>
+          </div>
+
+          <div class="info-item" style="margin-bottom: 18px;">
+            <span class="info-label">同桌趣事</span>
+            <div class="text-block empty">暂未填写</div>
+          </div>
+
+          <div class="info-item" style="margin-bottom: 18px;">
+            <span class="info-label">班级经典梗</span>
+            <div class="text-block empty">暂未填写</div>
+          </div>
+
+          <div class="info-item" style="margin-bottom: 18px;">
+            <span class="info-label">最社死瞬间</span>
+            <div class="text-block empty">暂未填写</div>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">学生时代最骄傲的事</span>
+            <div class="text-block empty">暂未填写</div>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════
+             七、未来规划
+             ════════════════════════════════════ -->
+        <div class="profile-section fade-in">
+          <h2 class="section-title">未来规划</h2>
+          <div class="info-grid">
+
+            <div class="info-item">
+              <span class="info-label">目标大学</span>
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">目标专业</span>
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">未来职业</span>
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">未来城市</span>
+              <span class="info-value empty">暂未填写</span>
+            </div>
+
+          </div>
+
+          <div class="info-item" style="margin-top: 18px; margin-bottom: 18px;">
+            <span class="info-label">十年后的自己</span>
+            <!-- TODO: 填写对十年后自己的想象 -->
+            <div class="text-block empty">暂未填写</div>
+          </div>
+
+          <div class="info-item">
+            <span class="info-label">给未来自己的话</span>
+            <!-- TODO: 填写给未来自己的信 -->
+            <div class="text-block empty">暂未填写</div>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════
+             八、贴纸展示区（页面内嵌）
+             ════════════════════════════════════ -->
+        <div class="profile-section fade-in">
+          <h2 class="section-title">我的贴纸墙</h2>
+          <!--
+            ★ 在 .sticker-showcase 内添加贴纸图片 ★
+            格式：<img class="sticker-item" src="../students/stickers/姓名_1.png" alt="">
+          -->
+          <div class="sticker-showcase" id="sticker-showcase">
+            <div class="placeholder-hint">暂无贴纸 · 等待添加中 ✦</div>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════
+             九、照片墙
+             ════════════════════════════════════ -->
+        <div class="profile-section fade-in">
+          <h2 class="section-title">照片墙</h2>
+          <!--
+            ★ 在 .photo-wall 内添加照片 ★
+            格式：<img src="../students/photos/姓名_1.jpg" alt="照片描述">
+            照片放在 students/photos/ 目录下
+          -->
+          <div class="photo-wall" id="photo-wall">
+            <!-- TODO: 在此添加照片 -->
+          </div>
+          <div class="placeholder-hint" id="photo-placeholder">暂无照片 · 等待添加中 ✦</div>
+        </div>
+
+        <!-- ═══════════════════════════════════
+             十、给同学们的话（结语）
+             ════════════════════════════════════ -->
+        <div class="profile-section fade-in">
+          <h2 class="section-title">给同学们的话</h2>
+          <!-- TODO: 填写给同学们的心里话 -->
+          <div class="text-block empty">暂未填写</div>
+        </div>
+
+        <!-- 印章装饰 -->
+        <div style="text-align: right; padding: 10px 20px 0; opacity: 0.6;">
+          <span class="seal">留念</span>
+        </div>
+
+        <div class="page-footer">同学录 · 青春回忆</div>
+
+      </div><!-- /.parallax-inner -->
+    </div><!-- /.parallax-card -->
+  </div><!-- /.profile-wrap -->
+</div><!-- /.form-layer -->
+
+
+<!-- ════════════════════════════════════════
+     Layer 4: Overlay Effect Layer（全局漂浮层）
+     z-index: 100
+     pointer-events: none（不影响下层操作）
+     内容由 JavaScript 动态生成
+     ════════════════════════════════════════ -->
+<div class="overlay-effect-layer"></div>
+
+
+<!-- ════════════════════════════════════════
+     音乐播放器（可选）
+     取消注释并配置音乐路径后即可启用
+     支持格式：mp3 / ogg
+     音乐文件放在 students/music/ 目录下
+     ════════════════════════════════════════ -->
+<!--
+<audio id="bg-music" loop preload="auto">
+  <source src="../students/music/【同学姓名】.mp3" type="audio/mpeg">
+  <source src="../students/music/【同学姓名】.ogg" type="audio/ogg">
+</audio>
+-->
+
+
+<script src="../assets/js/common.js?v=10.0.0"></script>
+<script src="../assets/js/overlay.js?v=10.0.0"></script>
+<script>
+(function () {
+  /* ── 会话验证 ── */
+  const viewer = Session.getName();
+  if (!viewer) return;
+  Session.renderGreeting('#user-greeting');
+
+  /* ── Layer 4: 粒子效果配置 ──
+     可选预设：OverlayPresets.sakura / stars / snow / confetti / fireflies / lite / none
+     或自定义图片：{ type: 'custom', imageSrc: '../assets/images/overlays/sakura.png', count: 20 }
+     TODO: 根据该同学的风格选择合适的粒子效果
+  */
+  // 运行时读取粒子开关（支持后台全局关闭）
+  fetch('../data/site_config.json').then(function(r){return r.json();}).catch(function(){return {};}).then(function(s){
+    var pcfg = s.particles && s.particles['student'];
+    var enabled = pcfg ? (pcfg.enabled !== false) : true;
+    if (enabled) {
+      var preset = (pcfg && pcfg.preset) ? pcfg.preset : 'sakura';
+      var overlayOpts = OverlayPresets[preset];
+      if (overlayOpts) Overlay.init(overlayOpts);
+    }
+  });
+
+  /* ── Layer 3: 3D 视差效果 ── */
+  Parallax.bind('#parallax-card', 5);
+
+  /* ── 滚动淡入 ── */
+  FadeIn.init('.fade-in');
+
+  /* ── 水波纹 ── */
+  Ripple.bindAll();
+
+  /* ── 背景音乐（取消 audio 标签注释后启用） ──
+     TODO: 配置背景音乐
+  */
+  // Music.init({
+  //   src: '../students/music/【同学姓名】.mp3',
+  //   title: '【歌曲名称】',
+  //   autoplay: true,
+  //   loop: true,
+  // });
+
+  /* ── 照片墙：如果有照片则隐藏占位提示 ── */
+  const photoWall = document.getElementById('photo-wall');
+  const photoPlaceholder = document.getElementById('photo-placeholder');
+  if (photoWall && photoWall.children.length > 0 && photoPlaceholder) {
+    photoPlaceholder.style.display = 'none';
+  }
+
+  /* ── 贴纸展示区：如果有贴纸则隐藏占位提示 ── */
+  const stickerShowcase = document.getElementById('sticker-showcase');
+  if (stickerShowcase) {
+    const realStickers = stickerShowcase.querySelectorAll('.sticker-item');
+    if (realStickers.length > 0) {
+      const hint = stickerShowcase.querySelector('.placeholder-hint');
+      if (hint) hint.style.display = 'none';
+    }
+  }
+
+})();
+</script>
+</body>
+</html>

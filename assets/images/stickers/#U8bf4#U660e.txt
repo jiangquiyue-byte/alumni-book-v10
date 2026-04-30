@@ -1,0 +1,10 @@
+通用贴纸目录
+============
+
+将贴纸图片放入此目录，在 HTML 页面的 .sticker-layer 中引用：
+
+<img class="sticker sticker--float"
+     src="assets/images/stickers/你的贴纸.png"
+     style="top: 10%; right: 5%; width: 60px;" alt="">
+
+支持格式：PNG（推荐透明底）、GIF、WebP

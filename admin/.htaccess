@@ -1,0 +1,35 @@
+# ═══════════════════════════════════════════════
+#  同学录 · /admin 目录保护
+# ═══════════════════════════════════════════════
+
+Options -Indexes
+
+# ── 禁止直接访问 PHP 模板和配置 ────────────────
+<FilesMatch "^(config\.php)$">
+  Require all denied
+</FilesMatch>
+
+# ── 禁止直接访问 templates 目录 ────────────────
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^templates/ - [F,L]
+</IfModule>
+
+# ── PHP 配置 ───────────────────────────────────
+<IfModule mod_php.c>
+  php_value upload_max_filesize 100M
+  php_value post_max_size 105M
+  php_value max_execution_time 300
+  php_value memory_limit 512M
+  php_value session.cookie_httponly On
+  php_value session.cookie_samesite Lax
+</IfModule>
+
+# ── 后台资源禁止缓存 ───────────────────────────
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|css)$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+</IfModule>

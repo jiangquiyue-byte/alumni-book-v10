@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>同学录 · 开发者</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600&family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;600&display=swap">
+<link rel="stylesheet" href="../assets/css/common.css?v=20260325">
+<style>
+
+/* ═══════════════════════════════════════
+   开发者 · 开发者专属
+   色调：深墨 + 琥珀磷光
+   ═══════════════════════════════════════ */
+
+:root {
+  --amber:      #e8b84b;
+  --amber-dim:  rgba(232,184,75,0.65);
+  --amber-soft: rgba(232,184,75,0.38);
+  --amber-glow: rgba(232,184,75,0.12);
+  --ink-deep:   #0c0e0a;
+  --ink-mid:    #111410;
+  --term-green: rgba(120,220,120,0.5);
+  --term-blue:  rgba(100,200,240,0.65);
+  --term-red:   rgba(240,100,100,0.5);
+}
+
+html, body { overflow-x: hidden; overflow-y: auto; background: var(--ink-deep); }
+
+/* ── 背景：细密网格 ── */
+.background-layer {
+  background:
+    linear-gradient(rgba(232,184,75,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232,184,75,0.025) 1px, transparent 1px),
+    radial-gradient(ellipse at 30% 0%, rgba(40,30,5,0.9) 0%, #0a0c08 55%, #060806 100%);
+  background-size: 40px 40px, 40px 40px, 100% 100%;
+}
+.background-layer::before,
+.background-layer::after { display: none; }
+
+/* CRT 暗晕 */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 998; pointer-events: none;
+  background: radial-gradient(ellipse at center,
+    transparent 45%, rgba(0,0,0,0.35) 82%, rgba(0,0,0,0.65) 100%);
+}
+
+/* ── 导航 ── */
+.top-nav {
+  background: rgba(8,10,6,0.95) !important;
+  border-bottom: 1px solid rgba(232,184,75,0.12) !important;
+}
+.nav-link {
+  color: rgba(232,184,75,0.45) !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 11px !important; letter-spacing: .1em !important;
+}
+.nav-link:hover { color: var(--amber-dim) !important; }
+.nav-link.active { color: var(--amber) !important; }
+.user-greeting {
+  color: rgba(232,184,75,0.32) !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 11px !important;
+}
+.watermark {
+  color: rgba(232,184,75,0.04) !important;
+  font-family: 'JetBrains Mono', monospace !important;
+}
+.nav-link.nav-admin {
+  border: 1px solid rgba(232,184,75,0.2) !important;
+  border-radius: 10px; padding: 2px 10px !important;
+  background: rgba(232,184,75,0.06);
+}
+.nav-link.nav-admin:hover {
+  background: rgba(232,184,75,0.12) !important;
+}
+
+/* ══ 主容器 ══ */
+.dev-wrap {
+  position: relative; z-index: var(--z-form);
+  max-width: 820px; margin: 0 auto;
+  padding: 80px 24px 80px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ══ HERO ══ */
+.hero {
+  display: flex; align-items: stretch; gap: 0;
+  margin-bottom: 32px;
+  border: 1px solid rgba(232,184,75,0.14);
+  border-radius: 4px; overflow: hidden;
+  background: rgba(15,14,8,0.7);
+  backdrop-filter: blur(4px);
+}
+
+/* 头像列 — 从左侧滑入 */
+.hero-avatar-col {
+  flex-shrink: 0; width: 180px;
+  background: rgba(8,8,4,0.6);
+  border-right: 1px solid rgba(232,184,75,0.1);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 28px 20px;
+  transform: translateX(-180px); opacity: 0;
+  animation: slideInLeft 0.7s 0.3s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+@keyframes slideInLeft { to { transform: translateX(0); opacity: 1; } }
+
+.hero-photo {
+  width: 120px; height: 120px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 2px solid rgba(232,184,75,0.25);
+  box-shadow:
+    0 0 0 4px rgba(232,184,75,0.06),
+    0 8px 32px rgba(0,0,0,0.5);
+  position: relative;
+  background: rgba(20,18,8,0.8);
+  margin-bottom: 14px;
+}
+.hero-photo img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+/* 琥珀扫描线叠加 */
+.hero-photo::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent 0px, transparent 3px,
+    rgba(232,184,75,0.03) 3px, rgba(232,184,75,0.03) 4px
+  );
+  pointer-events: none;
+}
+.hero-status {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 9px; color: rgba(120,220,120,0.6);
+  letter-spacing: .18em;
+}
+.status-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: rgba(120,220,120,0.7);
+  box-shadow: 0 0 6px rgba(120,220,120,0.5);
+  animation: pulse 2s ease infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.6;transform:scale(0.85)} }
+
+/* 信息列 — 展开动画 */
+.hero-info-col {
+  flex: 1; padding: 28px 32px;
+  max-width: 0; overflow: hidden; opacity: 0;
+  animation: expandRight 0.65s 1.0s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+@keyframes expandRight {
+  to { max-width: 700px; opacity: 1; }
+}
+
+.hero-badge {
+  font-size: 9px; letter-spacing: .22em; text-transform: uppercase;
+  color: rgba(232,184,75,0.45);
+  border: 1px solid rgba(232,184,75,0.18);
+  padding: 3px 10px; border-radius: 2px;
+  display: inline-block; margin-bottom: 14px;
+}
+.hero-name {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 58px; line-height: 1;
+  color: var(--amber);
+  text-shadow:
+    0 0 20px rgba(232,184,75,0.4),
+    0 0 60px rgba(232,184,75,0.15),
+    0 2px 4px rgba(0,0,0,0.6);
+  letter-spacing: .06em;
+  margin-bottom: 6px;
+  white-space: nowrap;
+}
+.hero-pinyin {
+  font-size: 12px; color: rgba(232,184,75,0.32);
+  letter-spacing: .18em; margin-bottom: 18px;
+}
+.hero-pinyin span { color: rgba(232,184,75,0.55); }
+.hero-tags {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-bottom: 18px;
+}
+.htag {
+  font-size: 10px; padding: 3px 10px;
+  border: 1px solid rgba(232,184,75,0.2);
+  border-radius: 2px;
+  color: rgba(232,184,75,0.55);
+  background: rgba(232,184,75,0.04);
+  letter-spacing: .06em;
+}
+.hero-motto {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 13px; color: rgba(220,195,130,0.45);
+  font-weight: 300; letter-spacing: .1em;
+  line-height: 1.9;
+  border-left: 2px solid rgba(232,184,75,0.2);
+  padding-left: 14px;
+}
+
+/* ══ 终端卡片 ══ */
+.tcard {
+  margin-bottom: 16px;
+  border: 1px solid rgba(232,184,75,0.1);
+  border-radius: 4px; overflow: hidden;
+  background: rgba(12,12,6,0.65);
+  backdrop-filter: blur(3px);
+  opacity: 0; transform: translateY(16px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.tcard.in { opacity: 1; transform: none; }
+.tcard:hover {
+  border-color: rgba(232,184,75,0.2);
+}
+
+.tcard-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 16px;
+  background: rgba(18,16,6,0.7);
+  border-bottom: 1px solid rgba(232,184,75,0.07);
+}
+.tdot { width: 10px; height: 10px; border-radius: 50%; }
+.tdot.r { background: rgba(240,100,100,0.45); }
+.tdot.y { background: rgba(240,200,60,0.45); }
+.tdot.g { background: rgba(100,220,100,0.45); }
+.tcard-title {
+  flex: 1; text-align: center;
+  font-size: 10px; color: rgba(232,184,75,0.3);
+  letter-spacing: .2em;
+}
+.tcard-body {
+  padding: 20px 24px;
+  font-size: 12px; line-height: 2;
+  color: rgba(232,184,75,0.55);
+}
+
+/* ── 代码语法高亮 ── */
+.ck  { color: rgba(100,200,240,0.65); }  /* key    */
+.cv  { color: rgba(220,180,100,0.75); }  /* value  */
+.ccn { color: rgba(220,195,140,0.82); font-family:'Noto Serif SC',serif; font-size:12px; } /* 中文值 */
+.cn  { color: rgba(175,130,255,0.68); }  /* number */
+.cc  { color: rgba(232,184,75,0.28); font-size:11px; }  /* comment */
+.co  { color: rgba(232,184,75,0.32); }  /* colon/bracket */
+.ce  { color: rgba(232,184,75,0.2); font-style:italic; }  /* empty */
+.cl  { display:flex; gap:6px; padding:1px 0; }
+.ci  { padding-left: 22px; }
+.ctag {
+  display: inline-block;
+  background: rgba(232,184,75,0.07);
+  border: 1px solid rgba(232,184,75,0.18);
+  color: rgba(232,184,75,0.6);
+  font-size: 10px; padding: 1px 9px;
+  border-radius: 2px; margin: 2px 3px 2px 0;
+  letter-spacing: .06em;
+}
+
+/* ── 技能进度 ── */
+.srow { display:grid; grid-template-columns:130px 1fr 38px; align-items:center; gap:12px; margin-bottom:11px; }
+.slabel { font-size:11px; color:rgba(232,184,75,0.45); letter-spacing:.1em; }
+.sbar { height:3px; background:rgba(232,184,75,0.08); border-radius:1px; overflow:hidden; }
+.sfill {
+  height:100%; border-radius:1px; width:0;
+  background: linear-gradient(to right, rgba(180,130,40,0.6), rgba(232,184,75,0.95));
+  box-shadow: 0 0 8px rgba(232,184,75,0.35);
+  transition: width 1.3s cubic-bezier(0.22,1,0.36,1);
+}
+.spct { font-size:10px; color:rgba(232,184,75,0.38); text-align:right; }
+
+/* ── git log ── */
+.gline {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(232,184,75,0.05);
+}
+.gline:last-child { border: none; }
+.ghash { color: rgba(240,160,80,0.6); white-space:nowrap; flex-shrink:0; font-size:11px; }
+.gbranch { color: rgba(100,200,240,0.45); white-space:nowrap; flex-shrink:0; font-size:11px; }
+.gmsg { color:rgba(215,195,155,0.68); font-family:'Noto Serif SC',serif; font-size:12px; line-height:1.65; }
+.gdate { color:rgba(232,184,75,0.28); white-space:nowrap; flex-shrink:0; font-size:10px; margin-left:auto; padding-left:12px; }
+
+/* ── 底部 ── */
+.dev-footer {
+  text-align: center; padding: 28px 0 0;
+  font-size: 10px; color: rgba(232,184,75,0.22);
+  letter-spacing: .18em;
+  border-top: 1px solid rgba(232,184,75,0.07);
+  margin-top: 8px;
+}
+.cursor-blink {
+  display: inline-block; width: 8px; height: 13px;
+  background: rgba(232,184,75,0.7); vertical-align: -2px;
+  animation: blink 1s step-end infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* ── 响应式 ── */
+@media (max-width: 600px) {
+  .hero { flex-direction: column; }
+  .hero-avatar-col { width: 100%; border-right: none; border-bottom: 1px solid rgba(232,184,75,0.1); flex-direction: row; gap: 18px; padding: 18px 20px; justify-content: flex-start; }
+  .hero-info-col { padding: 20px; }
+  .hero-name { font-size: 42px; }
+  @keyframes expandRight { to { max-width: 100%; opacity: 1; } }
+  .srow { grid-template-columns: 90px 1fr 30px; }
+}
+</style>
+</head>
+<body>
+
+<div class="background-layer"></div>
+<div class="sticker-layer"></div>
+
+<div class="form-layer" style="background:transparent;">
+  <div class="watermark">dev</div>
+  <nav class="top-nav">
+    <div class="user-greeting" id="user-greeting">同学你好</div>
+    <div class="nav-links">
+      <a class="nav-link" href="../preface.html">前言</a>
+      <a class="nav-link" href="../roster.html">同学录</a>
+      <a class="nav-link" href="../album.html">相册</a>
+      <a class="nav-link nav-admin" href="../admin/index.php" id="nav-admin-link">⚙ 后台</a>
+    </div>
+  </nav>
+
+  <div class="dev-wrap">
+
+    <!-- ══ HERO ══ -->
+    <div class="hero">
+      <!-- 头像列：滑入 -->
+      <div class="hero-avatar-col">
+        <div class="hero-photo">
+          <img src="../assets/dev/developer.jpg" alt="开发者">
+        </div>
+        <div class="hero-status">
+          <div class="status-dot"></div>
+          <span>online</span>
+        </div>
+      </div>
+
+      <!-- 信息列：展开 -->
+      <div class="hero-info-col">
+        <div class="hero-badge">classmate · personal edition</div>
+        <div class="hero-name">开发者</div>
+        <div class="hero-pinyin">
+          <span>chen</span> · <span>ming</span> · <span>xuan</span>
+          &nbsp;/&nbsp; .dev
+        </div>
+        <div class="hero-tags">
+          <span class="htag">热爱生活</span>
+          <span class="htag">独立思考</span>
+          <span class="htag">摩羯座</span>
+          <span class="htag">A 型血</span>
+          <span class="htag">古典音乐</span>
+          <span class="htag">美食爱好者</span>
+        </div>
+        <div class="hero-motto">
+          行而不辍，未来可期。<br>
+          喜欢阅读和思考，享受安静的时光，也期待与志同道合的朋友相遇。
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 基础信息 ══ -->
+    <div class="tcard">
+      <div class="tcard-header">
+        <div class="tdot r"></div><div class="tdot y"></div><div class="tdot g"></div>
+        <div class="tcard-title">profile.json</div>
+      </div>
+      <div class="tcard-body">
+        <div class="cl"><span class="co">{</span></div>
+
+        <div class="cl ci"><span class="cc">// 基础信息</span></div>
+        <div class="cl ci">
+          <span class="ck">"name"</span><span class="co">:</span>
+          <span class="ccn">"开发者"</span><span class="co">,</span>
+        </div>
+        <div class="cl ci">
+          <span class="ck">"nickname"</span><span class="co">:</span>
+          <!-- ★ 修改昵称 -->
+          <span class="cv">".dev"</span><span class="co">,</span>
+        </div>
+        <div class="cl ci">
+          <span class="ck">"role"</span><span class="co">:</span>
+          <span class="cv">"Student &amp; Classmate"</span><span class="co">,</span>
+        </div>
+        <div class="cl ci">
+          <span class="ck">"school"</span><span class="co">:</span>
+          <!-- ★ 修改学校 -->
+          <span class="ccn">"示例高级中学"</span><span class="co">,</span>
+        </div>
+        <div class="cl ci">
+          <span class="ck">"class"</span><span class="co">:</span>
+          <!-- ★ 修改班级 -->
+          <span class="ccn">"高三二班"</span><span class="co">,</span>
+        </div>
+        <div class="cl ci">
+          <span class="ck">"graduation"</span><span class="co">:</span>
+          <!-- ★ 修改毕业年份 -->
+          <span class="cn">2026</span><span class="co">,</span>
+        </div>
+
+        <div class="cl ci" style="margin-top:8px;"><span class="cc">// 联系方式</span></div>
+        <div class="cl ci">
+          <span class="ck">"qq"</span><span class="co">:</span>
+          <!-- ★ 修改 QQ，如 "123456789" -->
+          <span class="cv">"9876543210"</span><span class="co">,</span>
+        </div>
+        <div class="cl ci">
+          <span class="ck">"wechat"</span><span class="co">:</span>
+          <!-- ★ 修改微信 -->
+          <span class="cv">"sample_user_2026"</span><span class="co">,</span>
+        </div>
+        <div class="cl ci">
+          <span class="ck">"email"</span><span class="co">:</span>
+          <!-- ★ 修改邮箱 -->
+          <span class="cv">"sample@example.com"</span><span class="co">,</span>
+        </div>
+
+        <div class="cl ci" style="margin-top:8px;"><span class="cc">// 个性</span></div>
+        <div class="cl ci">
+          <span class="ck">"mbti"</span><span class="co">:</span>
+          <!-- ★ 修改 MBTI，如 "INTJ" -->
+          <span class="ccn">"INFP"</span><span class="co">,</span>
+        </div>
+        <div class="cl ci">
+          <span class="ck">"motto"</span><span class="co">:</span>
+          <!-- ★ 修改格言 -->
+          <span class="ccn">"行而不辍，未来可期"</span>
+        </div>
+
+        <div class="cl"><span class="co">}</span></div>
+      </div>
+    </div>
+
+    <!-- ══ 技能 ══ -->
+    <div class="tcard">
+      <div class="tcard-header">
+        <div class="tdot r"></div><div class="tdot y"></div><div class="tdot g"></div>
+        <div class="tcard-title">skills --verbose</div>
+      </div>
+      <div class="tcard-body">
+        <!-- ★ 修改 data-pct 值（0-100） -->
+        <div class="srow">
+          <div class="slabel">Frontend</div>
+          <div class="sbar"><div class="sfill" data-pct="88"></div></div>
+          <div class="spct">88%</div>
+        </div>
+        <div class="srow">
+          <div class="slabel">CSS / Design</div>
+          <div class="sbar"><div class="sfill" data-pct="82"></div></div>
+          <div class="spct">82%</div>
+        </div>
+        <div class="srow">
+          <div class="slabel">JavaScript</div>
+          <div class="sbar"><div class="sfill" data-pct="80"></div></div>
+          <div class="spct">80%</div>
+        </div>
+        <div class="srow">
+          <div class="slabel">PHP / Backend</div>
+          <div class="sbar"><div class="sfill" data-pct="68"></div></div>
+          <div class="spct">68%</div>
+        </div>
+        <div class="srow">
+          <div class="slabel">Node.js</div>
+          <div class="sbar"><div class="sfill" data-pct="72"></div></div>
+          <div class="spct">72%</div>
+        </div>
+        <div class="srow">
+          <div class="slabel">UI / 审美</div>
+          <div class="sbar"><div class="sfill" data-pct="90"></div></div>
+          <div class="spct">90%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 校园回忆 (git log) ══ -->
+    <div class="tcard">
+      <div class="tcard-header">
+        <div class="tdot r"></div><div class="tdot y"></div><div class="tdot g"></div>
+        <div class="tcard-title">git log --oneline  (校园回忆)</div>
+      </div>
+      <div class="tcard-body" style="padding-top:14px;padding-bottom:14px;">
+        <!-- ★ 替换为你真实的校园回忆 -->
+        <div class="gline">
+          <span class="ghash">a1b2c3d</span>
+          <span class="gbranch">(HEAD)</span>
+          <span class="gmsg">生日是某年某月某日，摩羯座，热爱生活，享受安静的阅读时光</span>
+          <span class="gdate">2026-04</span>
+        </div>
+        <div class="gline">
+          <span class="ghash">7e8f9a0</span>
+          <span class="gbranch"></span>
+          <span class="gmsg">喜欢《肖申克的救赎》和《千与千寻》，也喜欢听古典音乐放松</span>
+          <span class="gdate">2025-12</span>
+        </div>
+        <div class="gline">
+          <span class="ghash">4c5d6e7</span>
+          <span class="gbranch"></span>
+          <span class="gmsg">对科技和未来充满好奇，喜欢探索新事物和新思路</span>
+          <span class="gdate">2025-06</span>
+        </div>
+        <div class="gline">
+          <span class="ghash">2a3b4c5</span>
+          <span class="gbranch"></span>
+          <span class="gmsg">家住示例城市，喜欢策略类游戏，最爱尝试各地美食</span>
+          <span class="gdate">2024-09</span>
+        </div>
+        <div class="gline">
+          <span class="ghash">f1g2h3i</span>
+          <span class="gbranch"></span>
+          <span class="gmsg">各平台账号统一为「示例账号」，欢迎来找我聊天</span>
+          <span class="gdate">2022-09</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ 给同学们的话 ══ -->
+    <div class="tcard">
+      <div class="tcard-header">
+        <div class="tdot r"></div><div class="tdot y"></div><div class="tdot g"></div>
+        <div class="tcard-title">README.md</div>
+      </div>
+      <div class="tcard-body" style="font-family:'Noto Serif SC',serif;font-size:13px;color:rgba(220,195,140,0.55);line-height:2.1;letter-spacing:.08em;">
+        <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(232,184,75,0.35);margin-bottom:14px;"># 给同学们</p>
+        <!-- ★ 修改给同学们的话 -->
+        很高兴能和大家一起走过这一段时光。<br>
+        也许我们相识不算太深，<br>
+        但每一段相遇都值得被记住。<br>
+        希望以后大家都能奔赴自己的热爱，也别忘了这一段青春岁月。<br><br>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(232,184,75,0.28);">
+          // 剩余未填写字段暂时保留为空，后续可继续补充。
+        </span>
+      </div>
+    </div>
+
+    <!-- 底部 -->
+    <div class="dev-footer">
+      $ exit 0 &nbsp;·&nbsp; built with ♥ by 开发者 &nbsp;·&nbsp; 同学录 v10.0
+      <span class="cursor-blink"></span>
+    </div>
+
+  </div>
+</div>
+
+<div class="overlay-effect-layer"></div>
+
+<script src="../assets/js/common.js?v=10.0.0"></script>
+<script src="../assets/js/overlay.js?v=10.0.0"></script>
+<script>
+(function(){
+  const viewer = Session.getName();
+  if(!viewer) return;
+  Session.renderGreeting('#user-greeting');
+
+  // ── 本地环境检测：避免点击后台链接下载 index.php ──
+  (function(){
+    var adminLink = document.getElementById('nav-admin-link');
+    if (!adminLink) return;
+    var host = window.location.hostname;
+    // 如果是本地文件或 localhost，说明没有PHP环境
+    var isLocal = (host === '' || host === 'localhost' || host === '127.0.0.1' || window.location.protocol === 'file:');
+    if (isLocal) {
+      adminLink.removeAttribute('href');
+      adminLink.style.cursor = 'default';
+      adminLink.title = '本地预览模式，上传服务器后可使用后台';
+      adminLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        alert('💡 本地预览模式\n\n后台需要 PHP 环境才能运行。\n请将项目上传到服务器后访问后台。\n\n或在本地安装小皮面板（PhpStudy）启动 PHP 环境。');
+      });
+      // 视觉上变暗提示不可用
+      adminLink.style.opacity = '0.45';
+    }
+  })();
+  Overlay.init({ type:'firefly', count:14, driftRange:[20,120], speed:[11,19], size:[4,9], container: document.querySelector('.overlay-effect-layer') });
+
+  // ── 背景音乐（将 mp3 放入 students/music/ 目录后取消注释并修改路径）──
+  // Music.init({
+  //   src:      '../students/music/developer.mp3',
+  //   title:    '歌曲名称',
+  //   autoplay: true,
+  //   loop:     true,
+  // });
+
+  // 卡片逐个淡入
+  const cards = document.querySelectorAll('.tcard');
+  cards.forEach((el, i) => {
+    setTimeout(() => el.classList.add('in'), 1200 + i * 180);
+  });
+
+  // 进度条
+  setTimeout(() => {
+    document.querySelectorAll('.sfill').forEach(bar => {
+      bar.style.width = (bar.dataset.pct || 0) + '%';
+    });
+  }, 1600);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>同学录 · {{STUDENT_NAME}}</title>
+<link rel="stylesheet" href="../assets/css/common.css?v=10.0.0">
+<link rel="stylesheet" href="../assets/css/form.css?v=10.0.0">
+<style>
+  html, body { overflow-x: hidden; overflow-y: auto; }
+  /* 自定义背景（由后台生成） */
+  .background-layer { {{BG_CSS}} }
+  /* 半透明背景图支持（通过 CSS 变量驱动伪元素） */
+  .background-layer::before {
+    content: ''; position: absolute; inset: 0; z-index: -1;
+    background-image: var(--bg-img, none);
+    background-size: var(--bg-size, cover);
+    background-position: var(--bg-pos, center center);
+    background-attachment: scroll; /* 移动端避免 fixed 卡顿 */
+    opacity: var(--bg-opacity, 1);
+    transform: rotate(var(--bg-rotate, 0deg)) scaleX(var(--bg-scale-x, 1)) scaleY(var(--bg-scale-y, 1)) translateZ(0);
+    -webkit-transform: rotate(var(--bg-rotate, 0deg)) scaleX(var(--bg-scale-x, 1)) scaleY(var(--bg-scale-y, 1)) translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    will-change: transform, opacity;
+    transform-origin: center center;
+    pointer-events: none;
+  }
+  /* 照片墙布局 */
+  .photo-wall-item { position: relative; overflow: hidden; border-radius: 3px; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; }
+  .photo-wall-item:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(80,40,10,0.2); }
+  .photo-wall-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .photo-wall-item.wide { aspect-ratio: 4/3; grid-column: span 2; }
+  .photo-wall-item.tall { aspect-ratio: 3/4; grid-row: span 2; }
+  /* 相框效果 */
+  .photo-wall-item.frame-retro { border: 6px solid #e8d5a8; box-shadow: 0 0 0 2px #b8903a, inset 0 0 8px rgba(0,0,0,0.15); border-radius: 2px; }
+  .photo-wall-item.frame-retro::before { content: ''; position: absolute; inset: 3px; border: 1px solid rgba(200,168,100,0.45); z-index: 3; pointer-events: none; border-radius: 1px; }
+  .photo-wall-item.frame-film { border: 5px solid #1c1c1c; box-shadow: inset 0 0 0 2px #2e2e2e, 0 4px 16px rgba(0,0,0,0.35); border-radius: 2px; filter: contrast(1.04) saturate(0.9); }
+  .photo-wall-item.frame-polaroid { border: 8px solid #fff; border-bottom: 32px solid #fff; box-shadow: 0 2px 14px rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.04); border-radius: 1px; }
+  .photo-wall-item.frame-none { border: 1px solid rgba(160,120,60,0.15); }
+  /* 照片说明 */
+  .photo-caption { position: absolute; bottom: 0; left: 0; right: 0; padding: 6px 10px; background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent); color: rgba(240,210,150,0.9); font-family: 'ZCOOL XiaoWei', serif; font-size: 11px; letter-spacing: 0.08em; opacity: 0; transition: opacity 0.3s; }
+  .photo-wall-item:hover .photo-caption { opacity: 1; }
+  /* 照片墙网格 */
+  #photo-wall { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  @media (max-width: 600px) { #photo-wall { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body class="student-page">
+
+<!-- Layer 1: Background + Layer 2: Sticker (nested as child of background) -->
+<div class="background-layer" {{BG_STYLE}}>
+  <!-- 贴纸嵌套在背景容器内，相对于背景定位，随背景同步缩放/位移 -->
+  <div class="sticker-layer" id="sticker-layer">
+{{STICKERS_HTML}}
+  </div>
+</div>
+
+<!-- Layer 3: Form Layer -->
+<div class="form-layer">
+  <div class="watermark">{{STUDENT_NAME}}</div>
+
+  <nav class="top-nav">
+    <div class="user-greeting" id="user-greeting">同学你好</div>
+    <div class="nav-links">
+      <a class="nav-link" href="../preface.html">前言</a>
+      <a class="nav-link" href="../roster.html">同学录</a>
+      <a class="nav-link" href="../album.html">相册</a>
+    </div>
+  </nav>
+
+  <div class="profile-wrap">
+    <div class="parallax-card" id="parallax-card">
+      <div class="parallax-inner">
+
+        <!-- Hero -->
+        <div class="profile-hero fade-in">
+          <div class="avatar-ring" id="avatar">
+            {{AVATAR_HTML}}
+            <span id="avatar-char" style="{{AVATAR_CHAR_DISPLAY}}">{{STUDENT_CHAR}}</span>
+          </div>
+          <h1 class="profile-name" id="student-name">{{STUDENT_NAME}}</h1>
+          <p class="profile-nickname">「 {{NICKNAME}} 」</p>
+          <p class="profile-motto">「 {{MOTTO}} 」</p>
+        </div>
+
+        <!-- 一、基础信息 -->
+        <div class="profile-section fade-in">
+          <h2 class="section-title">基础信息</h2>
+          <div class="info-grid">
+            <div class="info-item"><span class="info-label">姓名</span>{{FIELD_NAME}}</div>
+            <div class="info-item"><span class="info-label">昵称</span>{{FIELD_NICKNAME}}</div>
+            <div class="info-item"><span class="info-label">性别</span>{{FIELD_GENDER}}</div>
+            <div class="info-item"><span class="info-label">出生日期</span>{{FIELD_BIRTHDAY}}</div>
+            <div class="info-item"><span class="info-label">学校</span>{{FIELD_SCHOOL}}</div>
+            <div class="info-item"><span class="info-label">班级</span>{{FIELD_CLASS}}</div>
+            <div class="info-item"><span class="info-label">毕业年份</span>{{FIELD_GRAD_YEAR}}</div>
+          </div>
+        </div>
+
+        <!-- 二、联系方式 -->
+        <div class="profile-section fade-in">
+          <h2 class="section-title">联系方式</h2>
+          <div class="info-grid">
+            <div class="info-item"><span class="info-label">QQ</span>{{FIELD_QQ}}</div>
+            <div class="info-item"><span class="info-label">微信</span>{{FIELD_WECHAT}}</div>
+            <div class="info-item"><span class="info-label">微博</span>{{FIELD_WEIBO}}</div>
+            <div class="info-item"><span class="info-label">手机</span>{{FIELD_PHONE}}</div>
+            <div class="info-item"><span class="info-label">邮箱</span>{{FIELD_EMAIL}}</div>
+            <div class="info-item"><span class="info-label">常住地</span>{{FIELD_ADDRESS}}</div>
+          </div>
+        </div>
+
+        <!-- 三、社交账号 -->
+        <div class="profile-section fade-in">
+          <h2 class="section-title">社交账号</h2>
+          <div class="info-grid">
+            <div class="info-item"><span class="info-label">抖音</span>{{FIELD_DOUYIN}}</div>
+            <div class="info-item"><span class="info-label">快手</span>{{FIELD_KUAISHOU}}</div>
+            <div class="info-item"><span class="info-label">B站</span>{{FIELD_BILIBILI}}</div>
+          </div>
+        </div>
+
+        <!-- 四、个性标签 -->
+        <div class="profile-section fade-in">
+          <h2 class="section-title">个性标签</h2>
+          <div class="info-grid">
+            <div class="info-item"><span class="info-label">MBTI</span>{{FIELD_MBTI}}</div>
+            <div class="info-item"><span class="info-label">血型</span>{{FIELD_BLOOD_TYPE}}</div>
+            <div class="info-item"><span class="info-label">星座</span>{{FIELD_ASTRO}}</div>
+            <div class="info-item"><span class="info-label">擅长的事</span>{{FIELD_STRENGTHS}}</div>
+            <div class="info-item"><span class="info-label">不擅长的事</span>{{FIELD_WEAKNESSES}}</div>
+            <div class="info-item"><span class="info-label">最喜欢科目</span>{{FIELD_BEST_SUBJECT}}</div>
+            <div class="info-item"><span class="info-label">最讨厌科目</span>{{FIELD_WORST_SUBJECT}}</div>
+          </div>
+          <div class="info-item" style="margin-top:14px;">
+            <span class="info-label">座右铭</span>
+            {{FIELD_MOTTO}}
+          </div>
+        </div>
+
+        <!-- 五、兴趣爱好 -->
+        <div class="profile-section fade-in">
+          <h2 class="section-title">兴趣爱好</h2>
+          <div class="info-grid">
+            <div class="info-item"><span class="info-label">喜欢明星</span>{{FIELD_FAV_IDOL}}</div>
+            <div class="info-item"><span class="info-label">喜欢动漫</span>{{FIELD_FAV_ANIME}}</div>
+            <div class="info-item"><span class="info-label">喜欢电影</span>{{FIELD_FAV_MOVIE}}</div>
+            <div class="info-item"><span class="info-label">喜欢歌曲</span>{{FIELD_FAV_SONG}}</div>
+            <div class="info-item"><span class="info-label">喜欢游戏</span>{{FIELD_FAV_GAME}}</div>
+            <div class="info-item"><span class="info-label">喜欢食物</span>{{FIELD_FAV_FOOD}}</div>
+            <div class="info-item"><span class="info-label">喜欢颜色</span>{{FIELD_FAV_COLOR}}</div>
+            <div class="info-item"><span class="info-label">喜欢运动</span>{{FIELD_FAV_SPORT}}</div>
+          </div>
+        </div>
+
+        <!-- 六、校园回忆 -->
+        <div class="profile-section fade-in">
+          <h2 class="section-title">校园回忆</h2>
+          <div class="info-item" style="margin-bottom:18px;"><span class="info-label">最难忘的一件事</span>{{FIELD_BEST_MEMORY}}</div>
+          <div class="info-item" style="margin-bottom:18px;"><span class="info-label">最难忘的一节课</span>{{FIELD_BEST_LESSON}}</div>
+          <div class="info-item" style="margin-bottom:18px;"><span class="info-label">同桌趣事</span>{{FIELD_DESKMATE_FUN}}</div>
+          <div class="info-item" style="margin-bottom:18px;"><span class="info-label">班级经典梗</span>{{FIELD_CLASS_MEME}}</div>
+          <div class="info-item" style="margin-bottom:18px;"><span class="info-label">最社死瞬间</span>{{FIELD_EMBARRASSING}}</div>
+          <div class="info-item"><span class="info-label">学生时代最骄傲的事</span>{{FIELD_PROUDEST}}</div>
+        </div>
+
+        <!-- 七、未来规划 -->
+        <div class="profile-section fade-in">
+          <h2 class="section-title">未来规划</h2>
+          <div class="info-grid">
+            <div class="info-item"><span class="info-label">目标大学</span>{{FIELD_TARGET_UNI}}</div>
+            <div class="info-item"><span class="info-label">目标专业</span>{{FIELD_TARGET_MAJOR}}</div>
+            <div class="info-item"><span class="info-label">未来职业</span>{{FIELD_FUTURE_CAREER}}</div>
+            <div class="info-item"><span class="info-label">未来城市</span>{{FIELD_FUTURE_CITY}}</div>
+          </div>
+          <div class="info-item" style="margin-top:18px;margin-bottom:18px;"><span class="info-label">十年后的自己</span>{{FIELD_FUTURE_SELF}}</div>
+          <div class="info-item"><span class="info-label">给未来自己的话</span>{{FIELD_LETTER_FUTURE}}</div>
+        </div>
+
+        <!-- 八、贴纸展示区 -->
+        <div class="profile-section fade-in">
+          <h2 class="section-title">我的贴纸墙</h2>
+          <div class="sticker-showcase" id="sticker-showcase">
+            <div class="placeholder-hint">暂无贴纸 · 等待添加中 ✦</div>
+          </div>
+        </div>
+
+        <!-- 九、照片墙 -->
+        <div class="profile-section fade-in">
+          <h2 class="section-title">照片墙</h2>
+          <div id="photo-wall">{{PHOTOS_HTML}}</div>
+          <div class="placeholder-hint" id="photo-placeholder" style="{{PHOTO_PLACEHOLDER_STYLE}}">暂无照片 · 等待添加中 ✦</div>
+        </div>
+
+        <!-- 十、给同学们的话 -->
+        <div class="profile-section fade-in">
+          <h2 class="section-title">给同学们的话</h2>
+          {{FIELD_LETTER_CLASS}}
+        </div>
+
+        <!-- 印章 -->
+        <div style="text-align:right;padding:10px 20px 0;opacity:0.6;">
+          <span class="seal">留念</span>
+        </div>
+        <div class="page-footer">同学录 · 青春回忆</div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Layer 4: Overlay -->
+<div class="overlay-effect-layer"></div>
+
+<script src="../assets/js/common.js?v=10.0.0"></script>
+<script src="../assets/js/overlay.js?v=10.0.0"></script>
+<script>
+(function () {
+  var viewer = Session.getName();
+  if (!viewer) return;
+  Session.renderGreeting('#user-greeting');
+  Parallax.bind('#parallax-card', 5);
+  FadeIn.init('.fade-in');
+  Ripple.bindAll();
+  {{MUSIC_CODE}}
+  Overlay.init({{PARTICLE_PRESET}});
+  var photoWall = document.getElementById('photo-wall');
+  var photoPlaceholder = document.getElementById('photo-placeholder');
+  if (photoWall && photoWall.children.length > 0 && photoPlaceholder) {
+    photoPlaceholder.style.display = 'none';
+  }
+  var stickerShowcase = document.getElementById('sticker-showcase');
+  if (stickerShowcase) {
+    var realStickers = stickerShowcase.querySelectorAll('.sticker-item');
+    if (realStickers.length > 0) {
+      var hint = stickerShowcase.querySelector('.placeholder-hint');
+      if (hint) hint.style.display = 'none';
+    }
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+{
+    "_comment": "全局站点配置，由后台管理系统维护",
+    "particles": {
+        "index": {
+            "enabled": true,
+            "preset": "sakura"
+        },
+        "preface": {
+            "enabled": true,
+            "preset": "bamboo"
+        },
+        "roster": {
+            "enabled": true,
+            "preset": "stars"
+        },
+        "album": {
+            "enabled": true,
+            "preset": "sakura"
+        },
+        "student": {
+            "enabled": false,
+            "preset": "sakura"
+        }
+    },
+    "footer": {
+        "beian": "123456799",
+        "beianUrl": "https://beian.miit.gov.cn/",
+        "copyright": "同学录 · 青春回忆"
+    },
+    "preface": {
+        "title": "致青春岁月",
+        "subtitle": "写在翻开同学录之前",
+        "content": "闲暇之余，我做了这款同学录网页。\n传统纸质同学录容易弄丢、破损泛黄，想给大家留一份不会消失的青春回忆。\n把时光、真心祝福都好好存起来，让这份属于我们的记忆，一直都在，永远鲜活。"
+    },
+    "acknowledgments": [
+        {
+            "name": "测试同学",
+            "role": "特别援助",
+            "tip": "666",
+            "avatar": "assets/ack/ack_0.jpg"
+        },
+        {
+            "name": "",
+            "role": "",
+            "tip": ""
+        },
+        {
+            "name": "",
+            "role": "",
+            "tip": ""
+        }
+    ],
+    "typography": {
+        "fontFamily": "Ma Shan Zheng",
+        "fontSize": "16"
+    }
+}

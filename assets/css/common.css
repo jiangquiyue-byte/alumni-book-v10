@@ -1,0 +1,661 @@
+/* ═══════════════════════════════════════════════════════
+   同学录 v4 · 公共样式
+   ═══════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;600;700&family=ZCOOL+XiaoWei&display=swap');
+
+/* ── CSS 变量 ── */
+:root {
+  --dark-bg:      #1a1208;
+  --wood-dark:    #2c1a0a;
+  --book-brown:   #4a2c0f;
+  --book-mid:     #5c3615;
+  --book-light:   #7a4a1e;
+  --gold:         #c9a84c;
+  --gold-light:   #e8c96a;
+  --gold-pale:    #f5e4a8;
+  --paper:        #fdf6e3;
+  --paper-aged:   #f5ead0;
+  --ink:          #2c1a0a;
+  --ink-light:    #4a3520;
+  --red-seal:     #9b2335;
+  --shadow-soft:  rgba(0,0,0,0.12);
+  --shadow-med:   rgba(0,0,0,0.25);
+  --shadow-deep:  rgba(0,0,0,0.45);
+  --border-gold:  rgba(180,130,50,0.3);
+  --border-paper: rgba(160,120,60,0.2);
+
+  /* 层级管理 */
+  --z-background:  0;
+  --z-sticker:     10;
+  --z-form:        20;
+  --z-nav:         50;
+  --z-overlay:     100;
+  --z-music:       60;
+}
+
+/* ── 基础重置 ── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+html, body { width: 100%; min-height: 100%; font-family: 'Noto Serif SC', serif; color: var(--ink); -webkit-tap-highlight-color: transparent; }
+img { max-width: 100%; display: block; }
+a { text-decoration: none; -webkit-tap-highlight-color: transparent; }
+
+
+/* ══════════════════════════════════════════
+   Layer 1 · Background UI Layer（底层）
+   z-index: var(--z-background)  = 0
+   ══════════════════════════════════════════ */
+
+.background-layer {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-background);
+  pointer-events: none;
+  /* 开启 GPU 合成层，防止移动端滚动白块 */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  will-change: transform;
+  /* 纸张噪点纹理 */
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.75 0 0 0 0 0.63 0 0 0 0 0.42 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23f)'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 30% 20%, #f7ead8 0%, #f0ddbf 40%, #e8d0a8 100%);
+  /* 移动端：避免 background-attachment:fixed 的性能问题 */
+  background-attachment: scroll;
+}
+
+/* 横线纹理覆盖 */
+.background-layer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px, transparent 35px,
+    rgba(160,120,60,0.1) 35px, rgba(160,120,60,0.1) 36px
+  );
+  /* GPU 加速 */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* 页面边缘阴影 */
+.background-layer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to right, rgba(100,60,10,0.1) 0%, transparent 8%, transparent 92%, rgba(100,60,10,0.1) 100%),
+    linear-gradient(to bottom, rgba(100,60,10,0.07) 0%, transparent 6%, transparent 94%, rgba(100,60,10,0.07) 100%);
+  /* GPU 加速 */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* 暗色背景层（首页用） */
+.background-layer--dark {
+  background:
+    repeating-linear-gradient(92deg, transparent 0px, transparent 3px, rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px),
+    repeating-linear-gradient(180deg, transparent 0px, transparent 60px, rgba(0,0,0,0.03) 60px, rgba(0,0,0,0.03) 61px),
+    linear-gradient(160deg, #2a1506 0%, #1a0e04 20%, #2e1a08 35%, #180c03 50%, #2c1808 65%, #1e1005 80%, #251408 100%);
+}
+.background-layer--dark::before,
+.background-layer--dark::after { display: none; }
+
+
+/* ══════════════════════════════════════════
+   Layer 2 · Sticker Layer（装饰贴纸层）
+   ★ 重构为背景子图层：嵌套在 .background-layer 内
+   ★ 使用 position:absolute 相对于背景容器定位
+   ★ 贴纸随背景图层同步缩放/位移，不再相对视口浮动
+   z-index: 1（高于背景伪元素，低于内容层）
+   ══════════════════════════════════════════ */
+
+.sticker-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;             /* 高于 ::before/::after 伪元素，低于内容层 */
+  pointer-events: none;   /* 默认不拦截鼠标，如需可交互单独覆盖 */
+  overflow: visible;      /* 允许贴纸超出背景边界少量溢出 */
+  /* GPU 合成层，防止贴纸动画触发重绘 */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* 贴纸基础样式 —— 所有贴纸放在 .sticker-layer 内 */
+.sticker {
+  position: absolute;
+  display: block;
+  pointer-events: auto;   /* 贴纸本身可被鼠标悬停 */
+  transform-origin: center;
+  transition: transform 0.3s cubic-bezier(0.22,1,0.36,1);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.sticker:hover { transform: scale(1.12) rotate(var(--r, 0deg)); }
+
+/* 常用贴纸动画（按需给贴纸加 class） */
+@keyframes stickerFloat {
+  0%, 100% { transform: translateY(0px) rotate(var(--r, 0deg)); }
+  50%       { transform: translateY(-8px) rotate(var(--r, 0deg)); }
+}
+@keyframes stickerSway {
+  0%, 100% { transform: rotate(var(--r, -3deg)); }
+  50%       { transform: rotate(calc(var(--r, -3deg) + 6deg)); }
+}
+@keyframes stickerSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes stickerBounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  40%       { transform: translateY(-10px) scale(1.05); }
+  60%       { transform: translateY(-6px) scale(0.97); }
+}
+
+.sticker--float  { animation: stickerFloat 4s ease-in-out infinite; }
+.sticker--sway   { animation: stickerSway  3.5s ease-in-out infinite; }
+.sticker--spin   { animation: stickerSpin  8s linear infinite; }
+.sticker--bounce { animation: stickerBounce 2.5s ease-in-out infinite; }
+
+
+/* ══════════════════════════════════════════
+   Layer 3 · Form Layer（表单层）
+   z-index: var(--z-form) = 20
+   ══════════════════════════════════════════ */
+
+.form-layer {
+  position: relative;
+  z-index: var(--z-form);
+  min-height: 100vh;
+}
+
+/* 3D 透视卡片容器 */
+.form-card-wrap {
+  perspective: 1200px;
+  perspective-origin: 50% 40%;
+}
+
+.form-card {
+  transform-style: preserve-3d;
+  transform: perspective(1200px) rotateX(0deg) rotateY(0deg);
+  transition: transform 0.15s ease-out;
+  will-change: transform;
+}
+
+/* 通用卡片样式 */
+.card {
+  background: rgba(255,255,255,0.45);
+  border: 1px solid var(--border-paper);
+  border-radius: 6px;
+  padding: 28px;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  box-shadow:
+    0 2px 8px var(--shadow-soft),
+    0 8px 32px var(--shadow-soft),
+    inset 0 1px 0 rgba(255,255,255,0.7);
+  transition: box-shadow 0.3s;
+}
+/* 不支持 backdrop-filter 的浏览器（如旧版微信、Firefox）降级处理 */
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .card { background: rgba(253,246,227,0.92); }
+}
+.card:hover {
+  box-shadow:
+    0 4px 16px var(--shadow-soft),
+    0 16px 48px rgba(80,40,10,0.12),
+    inset 0 1px 0 rgba(255,255,255,0.7);
+}
+
+
+/* ══════════════════════════════════════════
+   Layer 4 · Overlay Effect Layer（全局漂浮层）
+   z-index: var(--z-overlay) = 100
+   ══════════════════════════════════════════ */
+
+.overlay-effect-layer {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  pointer-events: none; /* 绝不影响下层交互 */
+  overflow: hidden;
+}
+
+/* 飘落粒子基础样式（由 JS 动态生成） */
+.particle {
+  position: absolute;
+  top: -60px;
+  pointer-events: none;
+  user-select: none;
+  will-change: transform, opacity;
+  filter: drop-shadow(0 0 8px rgba(255,255,255,0.12));
+}
+
+@keyframes particleFall {
+  0%   { transform: translate3d(0,0,0) rotate(0deg) scale(var(--scale-start, 0.92)); opacity: 0; }
+  8%   { opacity: var(--opacity-peak, 0.95); }
+  28%  { transform: translate3d(calc(var(--drift, 60px) * 0.25), 28vh, 0) rotate(calc(var(--spin, 360deg) * 0.28)) scale(1); }
+  52%  { transform: translate3d(calc(var(--drift, 60px) * 0.72), 58vh, 0) rotate(calc(var(--spin, 360deg) * 0.58)) scale(var(--scale-mid, 1.06)); opacity: calc(var(--opacity-peak, 0.95) * 0.9); }
+  78%  { opacity: calc(var(--opacity-peak, 0.95) * 0.7); }
+  100% { transform: translate3d(var(--drift, 60px), 110vh, 0) rotate(var(--spin, 360deg)) scale(var(--scale-end, 1.08)); opacity: 0; }
+}
+
+/* 备用：纯 CSS 樱花粒子（如不用图片） */
+.particle--petal {
+  width: 8px;
+  height: 8px;
+  border-radius: 0 50% 50% 50%;
+  background: rgba(255,182,193,0.7);
+  transform-origin: center;
+  animation: particleFall var(--dur, 8s) var(--delay, 0s) linear infinite;
+}
+.particle--star {
+  width: 6px;
+  height: 6px;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  background: rgba(255,220,120,0.8);
+  animation: particleFall var(--dur, 10s) var(--delay, 0s) linear infinite;
+}
+.particle--snow {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.85);
+  box-shadow: 0 0 4px rgba(255,255,255,0.5);
+  animation: particleFall var(--dur, 12s) var(--delay, 0s) linear infinite;
+}
+.particle--confetti {
+  width: 8px;
+  height: 5px;
+  border-radius: 1px;
+  animation: particleFall var(--dur, 9s) var(--delay, 0s) linear infinite;
+}
+
+/* 萤火虫（暗色背景用） */
+@keyframes fireflyFloat {
+  0%   { transform: translateY(110vh) translateX(0) scale(0.3); opacity: 0; }
+  8%   { opacity: 0.8; }
+  35%  { opacity: 0.9; }
+  80%  { opacity: 0.5; }
+  100% { transform: translateY(-10vh) translateX(var(--drift, 30px)) scale(0.3); opacity: 0; }
+}
+.particle--firefly {
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,220,120,0.9) 0%, rgba(230,190,80,0.4) 50%, transparent 100%);
+  box-shadow: 0 0 6px 2px rgba(230,190,80,0.2);
+  animation: fireflyFloat var(--dur, 14s) var(--delay, 0s) linear infinite;
+}
+
+
+/* ══════════════════════════════════════════
+   导航栏
+   z-index: var(--z-nav) = 50
+   ══════════════════════════════════════════ */
+
+.top-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: var(--z-nav);
+  padding: 14px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(to bottom, rgba(245,234,208,0.96) 0%, rgba(245,234,208,0) 100%);
+  pointer-events: none;
+}
+.top-nav > * { pointer-events: all; }
+
+.nav-links { display: flex; gap: 4px; }
+.nav-link {
+  font-family: 'ZCOOL XiaoWei', serif;
+  font-size: 13px;
+  color: rgba(90,55,18,0.65);
+  letter-spacing: 0.1em;
+  padding: 5px 13px;
+  border-radius: 4px;
+  transition: background 0.22s, color 0.22s, box-shadow 0.22s;
+  position: relative;
+}
+.nav-link::after {
+  content: '';
+  position: absolute; bottom: 2px; left: 13px; right: 13px; height: 1.5px;
+  background: var(--gold); border-radius: 1px;
+  transform: scaleX(0); transition: transform 0.25s cubic-bezier(0.22,1,0.36,1);
+  transform-origin: center;
+}
+.nav-link:hover {
+  background: rgba(201,168,76,0.1);
+  color: var(--ink);
+}
+.nav-link:hover::after { transform: scaleX(1); }
+.nav-link.active {
+  background: rgba(201,168,76,0.14);
+  color: var(--ink);
+}
+.nav-link.active::after { transform: scaleX(1); }
+
+.user-greeting {
+  font-family: 'ZCOOL XiaoWei', serif;
+  font-size: 13px;
+  color: var(--ink-light);
+  letter-spacing: 0.05em;
+}
+.user-greeting .name {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 18px;
+  color: var(--ink);
+}
+
+
+/* ══════════════════════════════════════════
+   水印
+   ══════════════════════════════════════════ */
+
+.watermark {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) rotate(-12deg);
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 110px;
+  color: rgba(155,35,53,0.032);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 1;
+  user-select: none;
+}
+
+
+/* ══════════════════════════════════════════
+   通用 UI 组件
+   ══════════════════════════════════════════ */
+
+/* 按钮 */
+.btn {
+  position: relative;
+  display: inline-block;
+  padding: 12px 36px;
+  background: linear-gradient(160deg, #5c3010 0%, #3d1e08 100%);
+  color: var(--gold-pale);
+  border: 1px solid var(--border-gold);
+  border-radius: 3px;
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 18px;
+  letter-spacing: 0.2em;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.3s;
+  box-shadow: 0 4px 18px var(--shadow-med), inset 0 1px 0 rgba(255,255,255,0.07);
+  text-align: center;
+}
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, rgba(200,160,60,0.12), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px var(--shadow-deep); }
+.btn:hover::before { opacity: 1; }
+.btn:active { transform: translateY(0); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Ripple */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(200,160,60,0.25);
+  transform: scale(0);
+  animation: rippleAnim 0.5s linear forwards;
+  pointer-events: none;
+}
+@keyframes rippleAnim { to { transform: scale(4); opacity: 0; } }
+
+/* 分隔线 */
+.ornament-line {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  justify-content: center;
+  color: rgba(140,90,30,0.4);
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  margin: 24px 0;
+}
+.ornament-line::before,
+.ornament-line::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(140,90,30,0.35), transparent);
+}
+
+/* 章节标题 */
+.section-title {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 22px;
+  color: var(--ink);
+  margin-bottom: 18px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-paper);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-title::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 22px;
+  background: linear-gradient(to bottom, var(--gold), var(--book-light));
+  border-radius: 2px;
+}
+
+/* 标签徽章 */
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  background: rgba(201,168,76,0.12);
+  border: 1px solid rgba(201,168,76,0.3);
+  border-radius: 20px;
+  font-family: 'ZCOOL XiaoWei', serif;
+  font-size: 12px;
+  color: var(--book-mid);
+  letter-spacing: 0.05em;
+}
+
+/* 淡入动画 */
+.fade-in {
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.22,1,0.36,1);
+}
+.fade-in.visible { opacity: 1; transform: translateY(0); }
+
+/* 页脚 */
+.page-footer {
+  text-align: center;
+  padding: 40px 0 30px;
+  color: rgba(140,90,30,0.22);
+  font-size: 12px;
+  letter-spacing: 0.35em;
+  font-family: 'ZCOOL XiaoWei', serif;
+}
+
+
+/* ══════════════════════════════════════════
+   音乐播放器
+   z-index: var(--z-music) = 60
+   ══════════════════════════════════════════ */
+
+.music-player {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: var(--z-music);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  background: rgba(74,44,15,0.92);
+  border: 1px solid var(--border-gold);
+  border-radius: 30px;
+  cursor: pointer;
+  box-shadow: 0 4px 20px var(--shadow-deep);
+  color: var(--gold-pale);
+  font-family: 'ZCOOL XiaoWei', serif;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  transition: transform 0.3s, box-shadow 0.3s;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  /* 触摸优化 */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.music-player:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px var(--shadow-deep);
+}
+.music-icon { font-size: 18px; line-height: 1; }
+.music-player.playing .music-icon { animation: musicSpin 3s linear infinite; }
+@keyframes musicSpin { to { transform: rotate(360deg); } }
+.music-title { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* 自动播放被阻止时的提示状态 */
+.music-player.needs-interact {
+  animation: musicPulse 1.8s ease-in-out infinite;
+  border-color: rgba(201,168,76,0.6);
+}
+@keyframes musicPulse {
+  0%,100% { box-shadow: 0 4px 20px var(--shadow-deep); }
+  50%      { box-shadow: 0 4px 28px rgba(201,168,76,0.35), 0 0 0 4px rgba(201,168,76,0.1); }
+}
+.music-tip {
+  font-size: 11px; color: rgba(240,210,150,0.7);
+  letter-spacing: 0.08em; margin-left: 2px;
+  animation: tipBlink 1.2s step-end infinite;
+}
+@keyframes tipBlink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+
+/* ══════════════════════════════════════════
+   跨浏览器兼容性补丁（微信/Safari/Firefox/旧版Chrome）
+   ══════════════════════════════════════════ */
+
+/* 1. 微信内置浏览器字体降级：当 Google Fonts 无法加载时，使用系统字体作为备用 */
+@font-face {
+  font-family: 'Ma Shan Zheng';
+  src: local('楷体');
+  font-display: swap;
+}
+
+/* 2. 微信/Safari 下 clip-path 屬性兼容性 */
+.particle--star {
+  -webkit-clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+/* 3. iOS Safari 下的滚动优化 */
+.form-layer,
+.overlay-effect-layer {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 4. 微信内置浏览器中 backdrop-filter 降级 */
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .music-player { background: rgba(50,28,8,0.97); }
+}
+
+/* 5. 移动端响应式适配 */
+@media (max-width: 768px) {
+  /* 导航栏在小屏幕上缩减内边距 */
+  .top-nav {
+    padding: 10px 16px;
+  }
+  /* 导航链接文字缩小 */
+  .nav-link {
+    font-size: 12px;
+    padding: 5px 9px;
+    letter-spacing: 0.06em;
+  }
+  /* 按鈕加大触摸区域 */
+  .btn {
+    padding: 12px 28px;
+    font-size: 16px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* 卡片内边距缩小 */
+  .card {
+    padding: 20px 16px;
+  }
+  /* 音乐播放器在小屏幕上缩小 */
+  .music-player {
+    bottom: 16px;
+    right: 16px;
+    padding: 8px 14px;
+    gap: 7px;
+  }
+  .music-title { max-width: 80px; }
+  /* 水印在小屏幕上缩小 */
+  .watermark {
+    font-size: 72px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* 超小屏幕进一步优化 */
+  .top-nav {
+    padding: 8px 12px;
+  }
+  .nav-link {
+    font-size: 11px;
+    padding: 4px 7px;
+  }
+  .music-player {
+    bottom: 12px;
+    right: 12px;
+    padding: 7px 12px;
+  }
+  .music-title { max-width: 60px; }
+  .watermark {
+    font-size: 52px;
+  }
+}
+
+/* 6. 高分辨率屏幕优化 (Retina / 高清屏) */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .background-layer {
+    /* 高分辨率屏上保证背景清晰 */
+    background-size: 150px 150px, auto;
+  }
+}
+
+/* 7. 减少动画（系统设置了减少动画时） */
+@media (prefers-reduced-motion: reduce) {
+  .sticker--float,
+  .sticker--sway,
+  .sticker--spin,
+  .sticker--bounce {
+    animation: none;
+  }
+  .fade-in {
+    transition: opacity 0.2s ease;
+  }
+  .particle {
+    animation-duration: 0.01s !important;
+    animation-iteration-count: 1 !important;
+    opacity: 0 !important;
+  }
+}
+
+/* 8. Firefox 特定修复 */
+@-moz-document url-prefix() {
+  /* Firefox 下字体平滑化 */
+  html {
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+

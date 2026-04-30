@@ -1,0 +1,11 @@
+{
+    "_comment": "照片配置文件。将照片放入 album/photos/ 目录后在此处添加记录。",
+    "_fields": {
+        "file": "文件名（含扩展名）",
+        "caption": "照片说明（可选）",
+        "wide": "是否宽图（占两列，可选，true/false）",
+        "tall": "是否高图（占两行，可选，true/false）",
+        "frame": "相框风格（可选）：retro=复古木框 | polaroid=拍立得白框 | film=胶片暗框 | none=无框（默认）"
+    },
+    "photos": []
+}

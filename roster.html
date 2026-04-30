@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>同学录 · 同学名册</title>
+<link rel="stylesheet" href="assets/css/common.css">
+<style>
+  html, body { overflow-x: hidden; overflow-y: auto; }
+  body { min-height: 100vh; }
+  body.wall-open { overflow: hidden; }
+
+  .roster-wrap {
+    position: relative;
+    z-index: var(--z-form);
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 88px 24px 72px;
+  }
+  .roster-header { text-align: center; margin-bottom: 30px; }
+  .roster-title {
+    margin: 0 0 10px;
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 44px;
+    color: var(--ink);
+    letter-spacing: .08em;
+    text-shadow: 1px 2px 4px rgba(0,0,0,.06);
+  }
+  .roster-subtitle {
+    margin: 0;
+    font-size: 13px;
+    color: rgba(80,50,20,.45);
+    letter-spacing: .18em;
+  }
+
+  .search-box { max-width: 680px; margin: 0 auto 32px; }
+  .search-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    background: rgba(255,255,255,.48);
+    border: 1px solid rgba(160,120,60,.18);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 12px 30px rgba(80,40,10,.08);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+  }
+  .search-row:focus-within {
+    border-color: rgba(120,80,30,.35);
+    box-shadow: 0 16px 36px rgba(80,40,10,.12);
+  }
+  .wall-entry-btn {
+    position: relative;
+    min-width: 94px;
+    border: none;
+    border-right: 1px solid rgba(160,120,60,.12);
+    background: linear-gradient(180deg, rgba(255,251,241,.96), rgba(244,231,206,.92));
+    color: rgba(89,54,22,.92);
+    font-family: 'ZCOOL XiaoWei', serif;
+    font-size: 13px;
+    letter-spacing: .12em;
+    cursor: pointer;
+    transition: background .2s ease, color .2s ease;
+  }
+  .wall-entry-btn:hover {
+    background: linear-gradient(180deg, rgba(255,255,245,.98), rgba(248,235,207,.96));
+    color: var(--book-light);
+  }
+  .wall-entry-btn::before {
+    content: '✦';
+    display: inline-block;
+    margin-right: 6px;
+    color: var(--gold);
+  }
+  .wall-entry-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    min-width: 18px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: rgba(152,36,56,.92);
+    color: #fffaf0;
+    font-size: 10px;
+    line-height: 1.5;
+    box-shadow: 0 2px 8px rgba(0,0,0,.14);
+  }
+  .wall-entry-badge.is-hidden { display: none; }
+  .search-input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    padding: 14px 18px;
+    font-size: 15px;
+    letter-spacing: .06em;
+    outline: none;
+  }
+  .search-input::placeholder { color: rgba(120,80,30,.34); }
+  .search-btn {
+    margin: 6px;
+    padding: 0 22px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(160deg, rgba(92,48,16,.92), rgba(61,30,8,.96));
+    color: rgba(240,210,150,.92);
+    font-family: 'ZCOOL XiaoWei', serif;
+    font-size: 13px;
+    letter-spacing: .18em;
+    cursor: pointer;
+    transition: transform .15s ease, filter .2s ease;
+    white-space: nowrap;
+  }
+  .search-btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
+  .search-count {
+    min-height: 18px;
+    margin-top: 8px;
+    text-align: center;
+    font-size: 12px;
+    color: rgba(120,80,30,.42);
+    letter-spacing: .06em;
+  }
+
+  .classmate-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 18px;
+  }
+  .classmate-card {
+    display: block;
+    text-decoration: none;
+    padding: 24px 16px;
+    border-radius: 18px;
+    background: rgba(255,255,255,.36);
+    border: 1px solid rgba(160,120,60,.14);
+    box-shadow: 0 12px 28px rgba(80,40,10,.06);
+    transition: transform .24s ease, box-shadow .24s ease, background .24s ease;
+    text-align: center;
+    color: inherit;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .classmate-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 38px rgba(80,40,10,.12);
+    background: rgba(255,255,255,.52);
+  }
+  .classmate-card.pending {
+    opacity: .55;
+    cursor: default;
+    pointer-events: none;
+  }
+  .classmate-card.hidden { display: none; }
+  .classmate-card.dev .card-motto {
+    font-family: 'Courier New', monospace;
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: .12em;
+  }
+  .card-avatar {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(160,120,60,.18);
+    background: linear-gradient(135deg, rgba(201,168,76,.28), rgba(122,74,30,.18));
+    box-shadow: 0 4px 12px rgba(0,0,0,.08);
+    color: var(--book-light);
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 28px;
+  }
+  .card-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .card-name {
+    margin-bottom: 6px;
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 22px;
+    color: var(--ink);
+    letter-spacing: .08em;
+  }
+  .card-name .highlight { color: var(--gold); text-shadow: 0 0 8px rgba(201,168,76,.28); }
+  .card-motto {
+    font-size: 12px;
+    color: rgba(80,50,20,.4);
+    line-height: 1.7;
+    font-style: italic;
+  }
+  .no-result {
+    display: none;
+    padding: 56px 20px;
+    text-align: center;
+    color: rgba(120,80,30,.4);
+    line-height: 2;
+  }
+
+  .wall-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 130;
+    padding: 22px;
+    background: rgba(20,10,3,.42);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    transition: opacity .22s ease, visibility .22s ease;
+  }
+  .wall-panel.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+  .wall-panel::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(circle at 50% 16%, rgba(255,241,214,.18), transparent 34%),
+      linear-gradient(180deg, rgba(18,10,3,.16), rgba(18,10,3,.58));
+    pointer-events: none;
+  }
+  .wall-shell {
+    position: relative;
+    z-index: 1;
+    width: min(1240px, 100%);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(320px, .9fr);
+    gap: 18px;
+    align-items: start;
+  }
+  .wall-stage-card,
+  .wall-side-card {
+    position: relative;
+    border-radius: 22px;
+    border: 1px solid rgba(180,130,50,.24);
+    background: linear-gradient(180deg, rgba(39,22,8,.92), rgba(19,11,4,.96));
+    box-shadow: 0 22px 52px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.05);
+    overflow: hidden;
+  }
+  .wall-stage-card::before,
+  .wall-side-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(180deg, transparent 0 34px, rgba(255,255,255,.02) 34px 35px);
+    pointer-events: none;
+  }
+
+  .wall-stage-head {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid rgba(201,168,76,.12);
+    background: linear-gradient(180deg, rgba(255,244,222,.08), rgba(255,244,222,0));
+  }
+  .wall-stage-title { margin: 0; font-family: 'Ma Shan Zheng', cursive; font-size: 32px; color: rgba(255,237,196,.96); letter-spacing: .08em; }
+  .wall-stage-tip { margin-top: 6px; font-size: 12px; line-height: 1.8; color: rgba(245,231,201,.58); }
+  .wall-counter-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .wall-counter {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(255,238,210,.08);
+    border: 1px solid rgba(201,168,76,.18);
+    color: rgba(255,236,196,.92);
+    font-family: 'ZCOOL XiaoWei', serif;
+  }
+  .wall-counter strong { font-size: 22px; color: var(--gold-pale); }
+  .wall-close-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255,248,231,.12);
+    color: rgba(255,240,212,.92);
+    font-size: 18px;
+    cursor: pointer;
+    transition: transform .2s ease, background .2s ease;
+  }
+  .wall-close-btn:hover { background: rgba(255,248,231,.2); transform: rotate(90deg); }
+
+  .wall-stage-tools {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 22px 0;
+  }
+  .wall-meta-text {
+    font-size: 12px;
+    line-height: 1.8;
+    color: rgba(255,237,210,.54);
+  }
+  .wall-tool-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .wall-mini-btn {
+    min-height: 34px;
+    padding: 0 14px;
+    border: 1px solid rgba(201,168,76,.18);
+    border-radius: 999px;
+    background: rgba(255,248,231,.08);
+    color: rgba(255,239,210,.88);
+    cursor: pointer;
+    transition: filter .2s ease, transform .15s ease;
+  }
+  .wall-mini-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+  .wall-stage {
+    position: relative;
+    height: clamp(360px, 64vh, 720px);
+    overflow: hidden;
+    margin: 12px 18px 18px;
+    border-radius: 18px;
+    border: 1px solid rgba(201,168,76,.12);
+    background:
+      radial-gradient(circle at 50% 50%, rgba(201,168,76,.12), transparent 32%),
+      linear-gradient(180deg, rgba(26,14,6,.8), rgba(10,6,2,.86));
+    cursor: pointer;
+  }
+  .wall-stage-glow {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 50% 50%, rgba(255,218,150,.06), transparent 28%),
+      radial-gradient(circle at 20% 18%, rgba(255,235,196,.08), transparent 24%),
+      radial-gradient(circle at 78% 80%, rgba(255,160,130,.06), transparent 24%);
+    pointer-events: none;
+  }
+  .wall-stage-surface { position: absolute; inset: 0; overflow: hidden; }
+  .wall-empty-hint {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    text-align: center;
+    color: rgba(255,234,198,.7);
+    font-size: 15px;
+    line-height: 1.9;
+    pointer-events: none;
+  }
+  .wall-stage-state {
+    position: absolute;
+    left: 14px;
+    bottom: 14px;
+    z-index: 1;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(11,7,3,.42);
+    border: 1px solid rgba(201,168,76,.16);
+    color: rgba(255,231,190,.88);
+    font-size: 12px;
+    letter-spacing: .08em;
+    pointer-events: none;
+  }
+  .wall-danmaku-item {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: inline-flex;
+    align-items: flex-start;
+    max-width: min(88vw, 640px);
+    padding: 8px 16px;
+    border-radius: 24px;
+    background: linear-gradient(180deg, rgba(255,250,238,.18), rgba(255,237,206,.06));
+    border: 1px solid rgba(255,230,185,.18);
+    color: #fff1d4;
+    font-weight: 500;
+    white-space: normal;
+    word-break: break-all;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    box-shadow: 0 4px 18px rgba(0,0,0,.14);
+    text-shadow: 0 1px 6px rgba(0,0,0,.22);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    pointer-events: none;
+    user-select: none;
+    will-change: transform;
+    transform: translate3d(-9999px, -9999px, 0);
+  }
+  .wall-danmaku-item::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    min-width: 8px;
+    margin-right: 8px;
+    margin-top: 4px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 12px currentColor;
+    opacity: .78;
+    flex: 0 0 auto;
+  }
+  .wall-measure {
+    position: absolute;
+    left: -99999px;
+    top: -99999px;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .wall-side-card {
+    display: flex;
+    flex-direction: column;
+    min-height: clamp(560px, 72vh, 760px);
+  }
+  .wall-side-head {
+    position: relative;
+    z-index: 1;
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid rgba(201,168,76,.12);
+  }
+  .wall-side-title { margin: 0 0 6px; font-family: 'Ma Shan Zheng', cursive; font-size: 28px; color: rgba(255,237,196,.96); }
+  .wall-side-subtitle { margin: 0; color: rgba(255,239,210,.56); font-size: 12px; line-height: 1.8; }
+  .wall-tabs {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    gap: 8px;
+    padding: 14px 18px 0;
+  }
+  .wall-tab-btn {
+    flex: 1;
+    min-height: 40px;
+    border-radius: 12px 12px 0 0;
+    border: 1px solid rgba(201,168,76,.16);
+    border-bottom: none;
+    background: rgba(255,248,231,.06);
+    color: rgba(255,239,210,.72);
+    cursor: pointer;
+    transition: background .2s ease, color .2s ease;
+  }
+  .wall-tab-btn.is-active {
+    background: rgba(255,248,231,.12);
+    color: rgba(255,242,220,.96);
+  }
+  .wall-side-body {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    padding: 0 18px 18px;
+  }
+  .wall-tab-panel {
+    display: none;
+    padding: 18px;
+    border: 1px solid rgba(201,168,76,.16);
+    border-radius: 0 18px 18px 18px;
+    background: rgba(255,248,231,.04);
+    min-height: 100%;
+  }
+  .wall-tab-panel.is-active { display: block; }
+
+  .wall-form-group { margin-bottom: 16px; }
+  .wall-form-label {
+    display: block;
+    margin-bottom: 8px;
+    color: rgba(255,239,210,.84);
+    font-size: 13px;
+    letter-spacing: .04em;
+  }
+  .wall-textarea {
+    width: 100%;
+    min-height: 128px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(201,168,76,.18);
+    background: rgba(255,248,231,.08);
+    color: rgba(255,245,228,.96);
+    font-size: 14px;
+    line-height: 1.8;
+    resize: vertical;
+    outline: none;
+    transition: border-color .2s ease, background .2s ease;
+  }
+  .wall-textarea:focus {
+    border-color: rgba(232,201,106,.5);
+    background: rgba(255,248,231,.12);
+  }
+  .wall-textarea::placeholder { color: rgba(255,239,210,.36); }
+  .wall-char-count {
+    margin-top: 6px;
+    text-align: right;
+    font-size: 12px;
+    color: rgba(255,239,210,.5);
+  }
+  .wall-inline-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .wall-select,
+  .wall-color-input {
+    width: 100%;
+    min-height: 44px;
+    border-radius: 12px;
+    border: 1px solid rgba(201,168,76,.18);
+    background: rgba(255,248,231,.08);
+    color: rgba(255,245,228,.96);
+    outline: none;
+  }
+  .wall-select { padding: 0 12px; }
+  .wall-color-input { padding: 6px; cursor: pointer; }
+  .wall-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(201,168,76,.18);
+    background: rgba(255,248,231,.08);
+  }
+  .wall-toggle-note { font-size: 12px; color: rgba(255,239,210,.52); line-height: 1.8; }
+  .wall-blacklist {
+    border-radius: 14px;
+    border: 1px solid rgba(201,168,76,.18);
+    background: rgba(255,248,231,.08);
+    overflow: hidden;
+  }
+  .wall-blacklist summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 12px 14px;
+    color: rgba(255,239,210,.92);
+    user-select: none;
+  }
+  .wall-blacklist summary::-webkit-details-marker { display: none; }
+  .wall-blacklist summary::after {
+    content: '▾';
+    float: right;
+    color: rgba(255,239,210,.58);
+  }
+  .wall-blacklist[open] summary::after { content: '▴'; }
+  .wall-blacklist-body {
+    max-height: 180px;
+    overflow-y: auto;
+    border-top: 1px solid rgba(201,168,76,.12);
+    padding: 8px 10px 10px;
+  }
+  .wall-blacklist-empty { padding: 14px; font-size: 12px; color: rgba(255,239,210,.46); }
+  .wall-blacklist-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 6px;
+    border-radius: 10px;
+    font-size: 13px;
+    color: rgba(255,239,210,.86);
+  }
+  .wall-blacklist-item:hover { background: rgba(255,248,231,.06); }
+  .wall-blacklist-item input { accent-color: var(--gold); }
+  .wall-selected-summary {
+    margin-top: 8px;
+    min-height: 18px;
+    font-size: 12px;
+    line-height: 1.8;
+    color: rgba(255,239,210,.56);
+  }
+  /* ── 操作面板折叠 ── */
+  .wall-send-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 48px;
+    padding: 0 16px;
+    border: 1px solid rgba(201,168,76,.22);
+    border-radius: 14px;
+    background: rgba(255,248,231,.08);
+    color: rgba(255,242,220,.92);
+    font-family: 'ZCOOL XiaoWei', serif;
+    font-size: 14px;
+    letter-spacing: .08em;
+    cursor: pointer;
+    transition: background .2s ease, border-color .2s ease;
+    margin-bottom: 0;
+  }
+  .wall-send-toggle:hover { background: rgba(255,248,231,.14); border-color: rgba(201,168,76,.38); }
+  .wall-send-toggle-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(201,168,76,.16);
+    color: rgba(255,239,210,.88);
+    font-size: 13px;
+    transition: transform .3s ease;
+    flex-shrink: 0;
+  }
+  .wall-send-toggle.is-open .wall-send-toggle-icon { transform: rotate(180deg); }
+  .wall-send-collapse {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height .36s cubic-bezier(.4,0,.2,1), opacity .28s ease, margin-top .28s ease;
+    margin-top: 0;
+  }
+  .wall-send-collapse.is-open {
+    max-height: 900px;
+    opacity: 1;
+    margin-top: 14px;
+  }
+  .wall-action-row { display: flex; gap: 10px; }
+  .wall-submit-btn {
+    flex: 1;
+    min-height: 48px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(160deg, rgba(201,168,76,.94), rgba(140,90,31,.98));
+    color: rgba(45,23,6,.94);
+    font-family: 'ZCOOL XiaoWei', serif;
+    font-size: 14px;
+    letter-spacing: .16em;
+    cursor: pointer;
+    transition: transform .15s ease, filter .2s ease;
+  }
+  .wall-submit-btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
+  .wall-submit-btn:disabled { cursor: not-allowed; opacity: .58; transform: none; }
+  .wall-status {
+    margin-top: 14px;
+    min-height: 46px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(255,248,231,.06);
+    border: 1px solid rgba(201,168,76,.12);
+    color: rgba(255,239,210,.7);
+    font-size: 12px;
+    line-height: 1.8;
+  }
+  .wall-status.is-error {
+    color: #ffd1c4;
+    border-color: rgba(255,123,90,.24);
+    background: rgba(110,35,14,.18);
+  }
+  .wall-status.is-success {
+    color: #e9f7c8;
+    border-color: rgba(177,224,92,.24);
+    background: rgba(47,83,15,.18);
+  }
+
+  .wall-mine-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    color: rgba(255,239,210,.72);
+    font-size: 12px;
+  }
+  .wall-mine-list {
+    display: grid;
+    gap: 12px;
+    max-height: min(60vh, 520px);
+    overflow-y: auto;
+    padding-right: 2px;
+  }
+  .wall-mine-item {
+    padding: 14px;
+    border-radius: 14px;
+    background: rgba(255,248,231,.06);
+    border: 1px solid rgba(201,168,76,.12);
+  }
+  .wall-mine-item-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .wall-mine-name { color: rgba(255,244,220,.94); font-weight: 600; }
+  .wall-mine-time { color: rgba(255,239,210,.48); font-size: 12px; line-height: 1.7; text-align: right; }
+  .wall-chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .wall-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    min-height: 24px;
+    border-radius: 999px;
+    background: rgba(255,248,231,.08);
+    border: 1px solid rgba(201,168,76,.12);
+    color: rgba(255,239,210,.72);
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .wall-empty-block {
+    padding: 38px 16px;
+    text-align: center;
+    color: rgba(255,239,210,.52);
+    font-size: 13px;
+    line-height: 1.9;
+  }
+
+  @media (max-width: 1080px) {
+    .wall-shell { grid-template-columns: 1fr; }
+    .wall-side-card { min-height: 0; }
+  }
+
+  @media (max-width: 720px) {
+    .roster-wrap { padding: 74px 16px 58px; }
+    .roster-title { font-size: 34px; }
+    .search-row { border-radius: 12px; }
+    .wall-entry-btn { min-width: 74px; font-size: 12px; }
+    .search-input { padding: 13px 12px; font-size: 14px; }
+    .search-btn { padding: 0 14px; font-size: 12px; letter-spacing: .12em; }
+    .classmate-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .classmate-card { padding: 18px 10px; border-radius: 14px; }
+    .card-avatar { width: 58px; height: 58px; font-size: 24px; }
+    .card-name { font-size: 18px; }
+
+    .wall-panel { padding: 10px; }
+    .wall-shell { gap: 12px; }
+    .wall-stage-card,
+    .wall-side-card { border-radius: 18px; }
+    .wall-stage-head {
+      padding: 14px 14px 12px;
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .wall-stage-title { font-size: 24px; }
+    .wall-stage-tip { font-size: 11px; letter-spacing: 0; }
+    .wall-counter-wrap { justify-content: space-between; width: 100%; }
+    .wall-counter { padding: 6px 10px; gap: 6px; font-size: 12px; }
+    .wall-counter strong { font-size: 18px; }
+    .wall-stage-tools {
+      padding: 10px 14px 0;
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .wall-tool-actions { justify-content: stretch; }
+    .wall-mini-btn { flex: 1; }
+    .wall-stage {
+      margin: 10px 12px 12px;
+      height: clamp(300px, 46vh, 420px);
+      border-radius: 16px;
+    }
+    .wall-danmaku-item {
+      max-width: calc(100vw - 48px);
+      padding: 7px 14px;
+      font-size: 14px;
+    }
+    .wall-side-head { padding: 14px 14px 12px; }
+    .wall-side-title { font-size: 24px; }
+    .wall-tabs { padding: 12px 12px 0; }
+    .wall-side-body { padding: 0 12px 12px; }
+    .wall-tab-panel { padding: 14px; border-radius: 0 14px 14px 14px; }
+    .wall-inline-grid { grid-template-columns: 1fr; }
+    .wall-textarea { min-height: 112px; }
+    .wall-mine-list { max-height: none; }
+  }
+
+  @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    .classmate-card,
+    .search-row { background: rgba(253,246,227,.92); }
+    .wall-danmaku-item,
+    .wall-textarea,
+    .wall-select,
+    .wall-color-input,
+    .wall-toggle,
+    .wall-blacklist,
+    .wall-status,
+    .wall-tab-panel,
+    .wall-mine-item { background: rgba(64,33,12,.84); }
+  }
+</style>
+</head>
+<body>
+<div class="background-layer">
+  <div class="sticker-layer"></div>
+</div>
+<div class="form-layer">
+  <div class="watermark">同学录</div>
+  <nav class="top-nav">
+    <div class="user-greeting" id="user-greeting">同学你好</div>
+    <div class="nav-links">
+      <a class="nav-link" href="preface.html">前言</a>
+      <a class="nav-link active" href="roster.html">同学录</a>
+      <a class="nav-link" href="album.html">相册</a>
+    </div>
+  </nav>
+
+  <div class="roster-wrap">
+    <div class="roster-header fade-in">
+      <div class="ornament-line">❦ 同 学 名 册 ❦</div>
+      <h1 class="roster-title">我们的同学</h1>
+      <p class="roster-subtitle">点击同学头像，进入 TA 的专属主页</p>
+    </div>
+
+    <div class="search-box fade-in">
+      <div class="search-row">
+        <button class="wall-entry-btn" id="wall-entry-btn" type="button" aria-label="打开弹幕留言墙">
+          留言墙
+          <span class="wall-entry-badge" id="wall-entry-badge">0</span>
+        </button>
+        <input type="text" class="search-input" id="search-input" placeholder="搜索同学姓名…" autocomplete="off">
+        <button class="search-btn" id="search-btn" type="button">搜 索</button>
+      </div>
+      <div class="search-count" id="search-count"></div>
+    </div>
+
+    <div class="classmate-grid" id="classmate-grid"></div>
+    <div class="no-result" id="no-result">未找到匹配的同学<br>请尝试其他关键词</div>
+    <div class="page-footer" id="page-footer">同学录 · 青春回忆</div>
+  </div>
+</div>
+
+<div class="wall-panel" id="wall-panel" aria-hidden="true">
+  <div class="wall-shell">
+    <section class="wall-stage-card">
+      <div class="wall-stage-head">
+        <div>
+          <h2 class="wall-stage-title">弹幕留言墙</h2>
+          <div class="wall-stage-tip">单击舞台可暂停或恢复；双击可切换涡流汇聚；涡流状态下再单击即可发散并回到滚动序列。</div>
+        </div>
+        <div class="wall-counter-wrap">
+          <div class="wall-counter">留言总数 <strong id="wall-total-count">0</strong></div>
+          <button class="wall-close-btn" id="wall-close-btn" type="button" aria-label="关闭留言墙">×</button>
+        </div>
+      </div>
+      <div class="wall-stage-tools">
+        <div class="wall-meta-text" id="wall-meta-text">每天会按新的随机顺序重排全部可见留言，并持续滚动展示。</div>
+        <div class="wall-tool-actions">
+          <button class="wall-mini-btn" id="wall-refresh-btn" type="button">刷新留言</button>
+        </div>
+      </div>
+      <div class="wall-stage" id="wall-stage" title="单击暂停/恢复，双击切换涡流">
+        <div class="wall-stage-glow"></div>
+        <div class="wall-stage-surface" id="wall-stage-surface"></div>
+        <div class="wall-empty-hint" id="wall-empty-hint">此刻留言墙还很安静。<br>写下第一句祝福，让青春在这里继续回响。</div>
+        <div class="wall-stage-state" id="wall-stage-state">当前状态：线性滚动</div>
+        <div class="wall-measure wall-danmaku-item" id="wall-measure"></div>
+      </div>
+    </section>
+
+    <aside class="wall-side-card">
+      <div class="wall-side-head">
+        <h3 class="wall-side-title">留言操作</h3>
+        <p class="wall-side-subtitle">支持实名或匿名发送。每位同学每天最多可发送 3 条，每条不超过 50 个字；若设置“不想让谁看到”，对应同学将被后端直接过滤。</p>
+      </div>
+      <div class="wall-tabs">
+        <button class="wall-tab-btn is-active" id="wall-tab-send" type="button" data-tab="send">发送留言</button>
+        <button class="wall-tab-btn" id="wall-tab-mine" type="button" data-tab="mine">我的发送</button>
+      </div>
+      <div class="wall-side-body">
+        <section class="wall-tab-panel is-active" id="wall-panel-send" data-panel="send">
+          <div class="wall-form-group">
+            <label class="wall-form-label" for="wall-textarea">留言内容</label>
+            <textarea class="wall-textarea" id="wall-textarea" maxlength="50" placeholder="例如：愿我们在各自奔赴的远方，也永远记得这段青春。"></textarea>
+            <div class="wall-char-count"><span id="wall-char-current">0</span> / 50</div>
+          </div>
+
+          <!-- 折叠配置区 -->
+          <button class="wall-send-toggle" id="wall-send-toggle" type="button" aria-expanded="false" aria-controls="wall-send-collapse">
+            <span>✦ 更多设置（匿名 · 颜色 · 字号 · 屏蔽）</span>
+            <span class="wall-send-toggle-icon">▾</span>
+          </button>
+          <div class="wall-send-collapse" id="wall-send-collapse" aria-hidden="true">
+            <div class="wall-form-group">
+              <label class="wall-form-label">显示方式</label>
+              <label class="wall-toggle">
+                <span>
+                  <strong style="display:block; margin-bottom:4px; font-weight:600; color:rgba(255,244,220,.94);">匿名发送</strong>
+                  <span class="wall-toggle-note">开启后前台仅显示"匿名同学"，后端仍保留真实发送者用于频率限制与我的发送记录。</span>
+                </span>
+                <input id="wall-anonymous" type="checkbox">
+              </label>
+            </div>
+
+            <div class="wall-form-group wall-inline-grid">
+              <div>
+                <label class="wall-form-label" for="wall-color">字体颜色</label>
+                <input class="wall-color-input" id="wall-color" type="color" value="#c9a84c">
+              </div>
+              <div>
+                <label class="wall-form-label" for="wall-font-size">字体大小</label>
+                <select class="wall-select" id="wall-font-size">
+                  <option value="14">14 px</option>
+                  <option value="16">16 px</option>
+                  <option value="18" selected>18 px</option>
+                  <option value="20">20 px</option>
+                  <option value="22">22 px</option>
+                  <option value="24">24 px</option>
+                  <option value="26">26 px</option>
+                  <option value="28">28 px</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="wall-form-group">
+              <label class="wall-form-label">指定不给谁看</label>
+              <details class="wall-blacklist" id="wall-blacklist-box">
+                <summary>点击选择需屏蔽的同学</summary>
+                <div class="wall-blacklist-body" id="wall-blacklist-body">
+                  <div class="wall-blacklist-empty">同学名单加载中…</div>
+                </div>
+              </details>
+              <div class="wall-selected-summary" id="wall-selected-summary">当前未选择屏蔽对象。</div>
+            </div>
+          </div><!-- /wall-send-collapse -->
+
+          <div class="wall-action-row" style="margin-top:14px;">
+            <button class="wall-submit-btn" id="wall-submit-btn" type="button">发 送 留 言</button>
+          </div>
+          <div class="wall-status" id="wall-status">今天你还可以发送 <strong id="wall-remaining-count">3</strong> 条留言。</div>
+        </section>
+
+        <section class="wall-tab-panel" id="wall-panel-mine" data-panel="mine">
+          <div class="wall-mine-head">
+            <span>查看你已发送过的留言与日期记录。</span>
+            <button class="wall-mini-btn" id="wall-mine-refresh-btn" type="button">刷新我的发送</button>
+          </div>
+          <div class="wall-mine-list" id="wall-mine-list">
+            <div class="wall-empty-block">正在加载你的留言记录…</div>
+          </div>
+        </section>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="overlay-effect-layer"></div>
+<script src="assets/js/common.js?v=10.0.0"></script>
+<script src="assets/js/overlay.js?v=10.0.0"></script>
+<script>
+(function () {
+  var viewer = Session.getName();
+  if (!viewer) return;
+  Session.renderGreeting('#user-greeting');
+
+  var state = {
+    allCards: [],
+    classmatesData: { classmates: [], pages: [], slugs: {} },
+    wall: null
+  };
+
+  var searchInput = document.getElementById('search-input');
+  var searchBtn = document.getElementById('search-btn');
+  var searchCount = document.getElementById('search-count');
+  var noResult = document.getElementById('no-result');
+
+  fetch('data/site_config.json')
+    .then(function (r) { return r.json(); })
+    .then(function (config) {
+      var particleCfg = (config.particles && config.particles.roster) || { enabled: true, preset: 'sakura' };
+      if (particleCfg.enabled) {
+        var preset = OverlayPresets[particleCfg.preset] || OverlayPresets.sakura;
+        if (preset) Overlay.init(preset);
+      }
+      if (typeof renderFooter === 'function') renderFooter(config);
+      applyTypography(config.typography || {});
+    })
+    .catch(function () {
+      Overlay.init(OverlayPresets.sakura);
+    });
+
+  Ripple.bindAll();
+
+  fetch('data/classmates.json')
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      state.classmatesData = data || state.classmatesData;
+      renderClassmates(state.classmatesData);
+      state.wall = new DanmakuWall({ viewer: viewer, classmatesData: state.classmatesData });
+    })
+    .catch(function () {
+      renderClassmates(state.classmatesData);
+      state.wall = new DanmakuWall({ viewer: viewer, classmatesData: state.classmatesData });
+    });
+
+  searchInput.addEventListener('input', doSearch);
+  searchBtn.addEventListener('click', doSearch);
+  searchInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') doSearch();
+  });
+
+  setTimeout(function () {
+    var header = document.querySelector('.roster-header');
+    if (header) header.classList.add('visible');
+  }, 150);
+  setTimeout(function () {
+    var box = document.querySelector('.search-box');
+    if (box) box.classList.add('visible');
+  }, 300);
+
+  function applyTypography(typo) {
+    if (!typo || typo.fontFamily === 'default' || !typo.fontFamily) return;
+    var ff = typo.fontFamily;
+    var fs = parseInt(typo.fontSize, 10) || 15;
+    var fontUrls = {
+      'Ma Shan Zheng': 'https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap',
+      'ZCOOL XiaoWei': 'https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&display=swap',
+      'Noto Serif SC': 'https://fonts.googleapis.com/css2?family=Noto+Serif+SC&display=swap',
+      'Noto Sans SC': 'https://fonts.googleapis.com/css2?family=Noto+Sans+SC&display=swap',
+      'ZCOOL QingKe HuangYou': 'https://fonts.googleapis.com/css2?family=ZCOOL+QingKe+HuangYou&display=swap',
+      'Liu Jian Mao Cao': 'https://fonts.googleapis.com/css2?family=Liu+Jian+Mao+Cao&display=swap'
+    };
+    if (fontUrls[ff]) {
+      var link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = fontUrls[ff];
+      document.head.appendChild(link);
+    }
+    document.body.style.fontFamily = '"' + ff + '", sans-serif';
+    document.body.style.fontSize = fs + 'px';
+    document.documentElement.style.setProperty('--global-font', '"' + ff + '", sans-serif');
+    document.documentElement.style.setProperty('--global-font-size', fs + 'px');
+  }
+
+  function escapeHtml(text) {
+    return String(text == null ? '' : text)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function renderClassmates(data) {
+    var grid = document.getElementById('classmate-grid');
+    grid.innerHTML = '';
+    state.allCards = [];
+    var list = data.classmates || [];
+    var pages = data.pages || [];
+    var slugs = data.slugs || {};
+
+    list.forEach(function (name, index) {
+      var hasPage = pages.indexOf(name) !== -1;
+      var slug = slugs[name] || encodeURIComponent(name);
+      var isDev = name === '开发者';
+      var card = document.createElement(hasPage ? 'a' : 'div');
+      card.className = 'classmate-card fade-in' + (hasPage ? '' : ' pending') + (isDev ? ' dev' : '');
+      card.dataset.name = name;
+      if (hasPage) card.href = 'students/' + slug + '.html';
+      var initial = name.charAt(0);
+      var motto = isDev ? '[ developer ]' : (hasPage ? '点击查看 TA 的故事' : '页面待建');
+      card.innerHTML = '' +
+        '<div class="card-avatar" id="ca-' + index + '"><span>' + escapeHtml(initial) + '</span></div>' +
+        '<div class="card-name" data-original="' + escapeHtml(name) + '">' + escapeHtml(name) + '</div>' +
+        '<div class="card-motto">' + escapeHtml(motto) + '</div>';
+      grid.appendChild(card);
+      state.allCards.push(card);
+
+      if (hasPage) {
+        var img = new Image();
+        img.src = 'students/avatars/' + slug + '.jpg';
+        img.onload = function () {
+          var avatar = document.getElementById('ca-' + index);
+          if (avatar) {
+            avatar.innerHTML = '';
+            avatar.appendChild(img);
+          }
+        };
+      }
+
+      setTimeout(function () {
+        card.classList.add('visible');
+      }, 360 + index * 55);
+    });
+  }
+
+  function doSearch() {
+    var kw = searchInput.value.trim().toLowerCase();
+    var count = 0;
+    state.allCards.forEach(function (card) {
+      var original = card.querySelector('.card-name').dataset.original;
+      var nameEl = card.querySelector('.card-name');
+      if (!kw || original.toLowerCase().indexOf(kw) !== -1) {
+        card.classList.remove('hidden');
+        card.classList.add('visible');
+        if (kw) {
+          var re = new RegExp('(' + kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+          nameEl.innerHTML = original.replace(re, '<span class="highlight">$1</span>');
+        } else {
+          nameEl.textContent = original;
+        }
+        count++;
+      } else {
+        card.classList.add('hidden');
+        nameEl.textContent = original;
+      }
+    });
+    searchCount.textContent = kw ? ('找到 ' + count + ' 位同学') : '';
+    noResult.style.display = kw && count === 0 ? 'block' : 'none';
+  }
+
+  function DanmakuWall(options) {
+    this.viewer = options.viewer || '';
+    this.classmatesData = options.classmatesData || { classmates: [], pages: [], slugs: {} };
+    this.messages = [];
+    this.myMessages = [];
+    this.activeBullets = [];
+    this.recyclePool = [];
+    this.cursor = 0;
+    this.nextLane = 0;
+    this.remainingToday = 3;
+    this.totalVisible = 0;
+    this.dailyKey = '';
+    this.updatedAt = '';
+    this.sending = false;
+    this.loadingMine = false;
+    this.mode = 'linear';
+    this.stageWidth = 0;
+    this.stageHeight = 0;
+    this.centerX = 0;
+    this.centerY = 0;
+    this.lastTick = 0;
+    this.rafId = 0;
+    this.pollTimer = 0;
+    this.singleClickTimer = 0;
+    this.currentTab = 'send';
+    this.seenStorageKey = 'danmaku_seen::' + encodeURIComponent(this.viewer || 'guest');
+    this.seenState = { dailyKey: '', total: 0 };
+    this.init();
+  }
+
+  DanmakuWall.prototype.init = function () {
+    this.cache();
+    this.loadSeenState();
+    this.renderBlacklist();
+    this.bind();
+    this.resize();
+    this.updateCharCount();
+    this.updateSelectedSummary();
+    this.updateStageState();
+    this.fetchFeed(true);
+    this.startLoop();
+    this.startPolling();
+  };
+
+  DanmakuWall.prototype.cache = function () {
+    this.entryBtn = document.getElementById('wall-entry-btn');
+    this.entryBadge = document.getElementById('wall-entry-badge');
+    this.panel = document.getElementById('wall-panel');
+    this.closeBtn = document.getElementById('wall-close-btn');
+    this.stage = document.getElementById('wall-stage');
+    this.surface = document.getElementById('wall-stage-surface');
+    this.emptyHint = document.getElementById('wall-empty-hint');
+    this.stageStateEl = document.getElementById('wall-stage-state');
+    this.totalCountEl = document.getElementById('wall-total-count');
+    this.metaTextEl = document.getElementById('wall-meta-text');
+    this.refreshBtn = document.getElementById('wall-refresh-btn');
+    this.measureEl = document.getElementById('wall-measure');
+
+    this.tabSendBtn = document.getElementById('wall-tab-send');
+    this.tabMineBtn = document.getElementById('wall-tab-mine');
+    this.tabSendPanel = document.getElementById('wall-panel-send');
+    this.tabMinePanel = document.getElementById('wall-panel-mine');
+    this.mineListEl = document.getElementById('wall-mine-list');
+    this.mineRefreshBtn = document.getElementById('wall-mine-refresh-btn');
+
+    this.textarea = document.getElementById('wall-textarea');
+    this.charCurrent = document.getElementById('wall-char-current');
+    this.anonymous = document.getElementById('wall-anonymous');
+    this.colorInput = document.getElementById('wall-color');
+    this.fontSizeSelect = document.getElementById('wall-font-size');
+    this.blacklistBody = document.getElementById('wall-blacklist-body');
+    this.selectedSummary = document.getElementById('wall-selected-summary');
+    this.submitBtn = document.getElementById('wall-submit-btn');
+    this.statusEl = document.getElementById('wall-status');
+    this.remainingCountEl = document.getElementById('wall-remaining-count');
+  };
+
+  DanmakuWall.prototype.bind = function () {
+    var self = this;
+    this.entryBtn.addEventListener('click', function () { self.open(); });
+    this.closeBtn.addEventListener('click', function () { self.close(); });
+    this.panel.addEventListener('click', function (e) {
+      if (e.target === self.panel) self.close();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && self.panel.classList.contains('is-open')) self.close();
+    });
+
+    this.textarea.addEventListener('input', function () { self.updateCharCount(); });
+    this.blacklistBody.addEventListener('change', function () { self.updateSelectedSummary(); });
+    this.submitBtn.addEventListener('click', function () { self.submit(); });
+    this.refreshBtn.addEventListener('click', function () { self.fetchFeed(true); });
+    this.mineRefreshBtn.addEventListener('click', function () { self.fetchMine(true); });
+    this.tabSendBtn.addEventListener('click', function () { self.switchTab('send'); });
+    this.tabMineBtn.addEventListener('click', function () { self.switchTab('mine'); });
+
+    // 折叠配置区事件
+    var sendToggle = document.getElementById('wall-send-toggle');
+    var sendCollapse = document.getElementById('wall-send-collapse');
+    if (sendToggle && sendCollapse) {
+      sendToggle.addEventListener('click', function () {
+        var isOpen = sendCollapse.classList.contains('is-open');
+        if (isOpen) {
+          sendCollapse.classList.remove('is-open');
+          sendCollapse.setAttribute('aria-hidden', 'true');
+          sendToggle.classList.remove('is-open');
+          sendToggle.setAttribute('aria-expanded', 'false');
+        } else {
+          sendCollapse.classList.add('is-open');
+          sendCollapse.setAttribute('aria-hidden', 'false');
+          sendToggle.classList.add('is-open');
+          sendToggle.setAttribute('aria-expanded', 'true');
+        }
+      });
+    }
+
+    window.addEventListener('resize', function () {
+      if (typeof Utils !== 'undefined' && Utils.rafThrottle) return;
+    });
+    window.addEventListener('resize', this.onResize.bind(this));
+
+    this.stage.addEventListener('click', function () {
+      clearTimeout(self.singleClickTimer);
+      self.singleClickTimer = setTimeout(function () {
+        if (self.mode === 'vortex' || self.mode === 'releasing') {
+          self.releaseFromVortex();
+        } else {
+          self.togglePause();
+        }
+      }, 220);
+    });
+    this.stage.addEventListener('dblclick', function (e) {
+      e.preventDefault();
+      clearTimeout(self.singleClickTimer);
+      self.activateVortex();
+    });
+  };
+
+  DanmakuWall.prototype.onResize = function () {
+    if (this._resizeRaf) cancelAnimationFrame(this._resizeRaf);
+    var self = this;
+    this._resizeRaf = requestAnimationFrame(function () {
+      self.resize();
+      if (self.mode === 'linear' || self.mode === 'paused') {
+        self.reflowLinearBullets();
+      }
+    });
+  };
+
+  DanmakuWall.prototype.open = function () {
+    this.panel.classList.add('is-open');
+    this.panel.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('wall-open');
+    this.markSeen();
+    this.resize();
+    this.fetchFeed(true);
+  };
+
+  DanmakuWall.prototype.close = function () {
+    this.panel.classList.remove('is-open');
+    this.panel.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('wall-open');
+    this.updateTotal(this.totalVisible);
+  };
+
+  DanmakuWall.prototype.hideBadge = function () {
+    this.entryBadge.classList.add('is-hidden');
+  };
+
+  DanmakuWall.prototype.showBadge = function () {
+    if (!this.panel.classList.contains('is-open')) {
+      this.entryBadge.classList.remove('is-hidden');
+    }
+  };
+
+  DanmakuWall.prototype.loadSeenState = function () {
+    try {
+      var raw = localStorage.getItem(this.seenStorageKey);
+      if (!raw) return;
+      var parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return;
+      this.seenState = {
+        dailyKey: parsed.dailyKey || '',
+        total: Math.max(0, parseInt(parsed.total, 10) || 0)
+      };
+    } catch (err) {
+      this.seenState = { dailyKey: '', total: 0 };
+    }
+  };
+
+  DanmakuWall.prototype.saveSeenState = function () {
+    try {
+      localStorage.setItem(this.seenStorageKey, JSON.stringify(this.seenState));
+    } catch (err) {}
+  };
+
+  DanmakuWall.prototype.markSeen = function () {
+    this.seenState.dailyKey = this.dailyKey || '';
+    this.seenState.total = this.totalVisible;
+    this.saveSeenState();
+    this.hideBadge();
+  };
+
+  DanmakuWall.prototype.switchTab = function (tab) {
+    this.currentTab = tab === 'mine' ? 'mine' : 'send';
+    this.tabSendBtn.classList.toggle('is-active', this.currentTab === 'send');
+    this.tabMineBtn.classList.toggle('is-active', this.currentTab === 'mine');
+    this.tabSendPanel.classList.toggle('is-active', this.currentTab === 'send');
+    this.tabMinePanel.classList.toggle('is-active', this.currentTab === 'mine');
+    if (this.currentTab === 'mine') this.fetchMine(false);
+  };
+
+  DanmakuWall.prototype.renderBlacklist = function () {
+    var self = this;
+    var names = (this.classmatesData.classmates || []).filter(function (name) {
+      return name && name !== self.viewer;
+    });
+    if (!names.length) {
+      this.blacklistBody.innerHTML = '<div class="wall-blacklist-empty">暂无可选择的同学名单。</div>';
+      return;
+    }
+    var html = names.map(function (name, index) {
+      return '<label class="wall-blacklist-item">' +
+        '<input type="checkbox" value="' + escapeHtml(name) + '" data-name="' + escapeHtml(name) + '" id="wall-hide-' + index + '">' +
+        '<span>' + escapeHtml(name) + '</span>' +
+      '</label>';
+    }).join('');
+    this.blacklistBody.innerHTML = html;
+  };
+
+  DanmakuWall.prototype.getHiddenFor = function () {
+    var list = [];
+    var checked = this.blacklistBody.querySelectorAll('input[type="checkbox"]:checked');
+    Array.prototype.forEach.call(checked, function (node) {
+      var name = node.getAttribute('data-name') || node.value;
+      if (name) list.push(name);
+    });
+    return list;
+  };
+
+  DanmakuWall.prototype.updateSelectedSummary = function () {
+    var hiddenFor = this.getHiddenFor();
+    this.selectedSummary.textContent = hiddenFor.length ? ('已屏蔽：' + hiddenFor.join('、')) : '当前未选择屏蔽对象。';
+  };
+
+  DanmakuWall.prototype.updateCharCount = function () {
+    var len = (this.textarea.value || '').trim().length;
+    this.charCurrent.textContent = len;
+  };
+
+  DanmakuWall.prototype.updateRemaining = function (count) {
+    this.remainingToday = Math.max(0, parseInt(count, 10) || 0);
+    this.remainingCountEl.textContent = this.remainingToday;
+    this.submitBtn.disabled = this.remainingToday <= 0 || this.sending;
+  };
+
+  DanmakuWall.prototype.updateStatus = function (html, type) {
+    this.statusEl.classList.remove('is-error', 'is-success');
+    if (type === 'error') this.statusEl.classList.add('is-error');
+    if (type === 'success') this.statusEl.classList.add('is-success');
+    this.statusEl.innerHTML = html || ('今天你还可以发送 <strong id="wall-remaining-count">' + this.remainingToday + '</strong> 条留言。');
+    this.remainingCountEl = document.getElementById('wall-remaining-count') || this.remainingCountEl;
+  };
+
+  DanmakuWall.prototype.updateMeta = function () {
+    var dateText = this.dailyKey || '今日';
+    var updated = this.updatedAt ? ('最新更新时间：' + this.updatedAt.replace('T', ' ').slice(0, 16)) : '等待同步';
+    this.metaTextEl.textContent = dateText + ' 已按当天随机顺序重排全部可见留言；' + updated + '。';
+  };
+
+  DanmakuWall.prototype.updateTotal = function (total) {
+    this.totalVisible = Math.max(0, parseInt(total, 10) || 0);
+    this.totalCountEl.textContent = this.totalVisible;
+
+    var unseen = 0;
+    if (this.dailyKey && this.seenState.dailyKey === this.dailyKey) {
+      unseen = Math.max(0, this.totalVisible - this.seenState.total);
+    } else {
+      unseen = this.totalVisible;
+    }
+
+    this.entryBadge.textContent = unseen > 99 ? '99+' : String(unseen);
+    if (this.panel.classList.contains('is-open') || unseen <= 0) {
+      this.hideBadge();
+    } else {
+      this.showBadge();
+    }
+  };
+
+  DanmakuWall.prototype.resize = function () {
+    this.stageWidth = this.stage.clientWidth || 0;
+    this.stageHeight = this.stage.clientHeight || 0;
+    this.centerX = this.stageWidth / 2;
+    this.centerY = this.stageHeight / 2;
+  };
+
+  DanmakuWall.prototype.getLaneCount = function () {
+    if (window.innerWidth <= 420) return 5;
+    if (window.innerWidth <= 720) return 6;
+    if (window.innerWidth <= 1080) return 8;
+    return 10;
+  };
+
+  DanmakuWall.prototype.getMaxActive = function () {
+    if (window.innerWidth <= 420) return 10;
+    if (window.innerWidth <= 720) return 12;
+    if (window.innerWidth <= 1080) return 16;
+    return 22;
+  };
+
+  DanmakuWall.prototype.getLaneY = function (lane) {
+    var laneCount = this.getLaneCount();
+    var top = 18;
+    var bottom = 42;
+    var usable = Math.max(120, this.stageHeight - top - bottom);
+    var laneHeight = usable / laneCount;
+    return top + lane * laneHeight + laneHeight * .2;
+  };
+
+  DanmakuWall.prototype.normalizeMessage = function (item) {
+    return {
+      id: item.id || '',
+      displayName: item.displayName || '匿名同学',
+      anonymous: !!item.anonymous,
+      content: item.content || '',
+      color: item.color || '#C9A84C',
+      fontSize: parseInt(item.fontSize, 10) || 18,
+      createdAt: item.createdAt || '',
+      createdDate: item.createdDate || '',
+      text: (item.displayName || '匿名同学') + '：' + (item.content || ''),
+      width: 0,
+      height: 0
+    };
+  };
+
+  DanmakuWall.prototype.measureMessage = function (message) {
+    if (message.width && message.height) return;
+    this.measureEl.style.fontSize = message.fontSize + 'px';
+    this.measureEl.style.color = message.color;
+    this.measureEl.textContent = message.text;
+    message.width = this.measureEl.offsetWidth || (message.text.length * message.fontSize * .62 + 44);
+    message.height = this.measureEl.offsetHeight || (message.fontSize + 18);
+  };
+
+  DanmakuWall.prototype.computeSpeed = function (message) {
+    var isMobile = window.innerWidth <= 720;
+    var base = isMobile ? 44 : 55;
+    return base + Math.min(16, Math.max(0, message.fontSize - 14) * 1.4) + Math.random() * 14;
+  };
+
+  DanmakuWall.prototype.createBullet = function () {
+    var el = this.recyclePool.pop();
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'wall-danmaku-item';
+      this.surface.appendChild(el);
+    }
+    return {
+      el: el,
+      message: null,
+      width: 0,
+      height: 0,
+      x: 0,
+      y: 0,
+      lane: 0,
+      speed: 0,
+      angle: 0,
+      targetRadius: 0,
+      currentRadius: 0,
+      angularVelocity: 0,
+      releaseProgress: 1,
+      releaseFromX: 0,
+      releaseFromY: 0,
+      releaseToX: 0,
+      releaseToY: 0
+    };
+  };
+
+  DanmakuWall.prototype.recycleBullet = function (bullet) {
+    if (!bullet || !bullet.el) return;
+    bullet.el.style.transform = 'translate3d(-9999px, -9999px, 0)';
+    this.recyclePool.push(bullet.el);
+  };
+
+  DanmakuWall.prototype.clearBullets = function () {
+    while (this.activeBullets.length) {
+      this.recycleBullet(this.activeBullets.pop());
+    }
+  };
+
+  DanmakuWall.prototype.pickNextMessage = function () {
+    if (!this.messages.length) return null;
+    var message = this.messages[this.cursor % this.messages.length];
+    this.cursor = (this.cursor + 1) % Math.max(1, this.messages.length);
+    return message;
+  };
+
+  DanmakuWall.prototype.bindMessageToBullet = function (bullet, message) {
+    bullet.message = message;
+    this.measureMessage(message);
+    bullet.width = message.width;
+    bullet.height = message.height;
+    bullet.speed = this.computeSpeed(message);
+    bullet.lane = this.nextLane % this.getLaneCount();
+    this.nextLane += 1;
+    bullet.y = this.getLaneY(bullet.lane);
+    bullet.el.textContent = message.text;
+    bullet.el.style.color = message.color;
+    bullet.el.style.fontSize = message.fontSize + 'px';
+  };
+
+  DanmakuWall.prototype.getFarthestRight = function () {
+    var farthest = this.stageWidth * .1;
+    for (var i = 0; i < this.activeBullets.length; i++) {
+      farthest = Math.max(farthest, this.activeBullets[i].x + this.activeBullets[i].width);
+    }
+    return farthest;
+  };
+
+  DanmakuWall.prototype.spawnBullet = function (bullet, immediate) {
+    var message = this.pickNextMessage();
+    if (!message) return;
+    this.bindMessageToBullet(bullet, message);
+    var isMobile = window.innerWidth <= 720;
+    var gapBase = isMobile ? 18 : 40;
+    var gapFlex = isMobile ? 24 : 52;
+    var gap = gapBase + Math.random() * gapFlex;
+    bullet.x = immediate ? (this.stageWidth + Math.random() * 80) : Math.max(this.stageWidth + gap, this.getFarthestRight() + gap);
+    this.paintBullet(bullet);
+  };
+
+  DanmakuWall.prototype.paintBullet = function (bullet) {
+    bullet.el.style.transform = 'translate3d(' + bullet.x.toFixed(1) + 'px,' + bullet.y.toFixed(1) + 'px,0)';
+  };
+
+  DanmakuWall.prototype.seedBullets = function () {
+    this.clearBullets();
+    if (!this.messages.length) return;
+    this.cursor = 0;
+    this.nextLane = 0;
+    var target = Math.min(this.messages.length, this.getMaxActive());
+    var span = this.stageWidth + 180;
+    for (var i = 0; i < target; i++) {
+      var bullet = this.createBullet();
+      this.bindMessageToBullet(bullet, this.pickNextMessage());
+      bullet.x = (i / Math.max(1, target)) * span - 24;
+      this.paintBullet(bullet);
+      this.activeBullets.push(bullet);
+    }
+  };
+
+  DanmakuWall.prototype.ensurePopulation = function () {
+    var target = Math.min(this.messages.length, this.getMaxActive());
+    while (this.activeBullets.length < target) {
+      var bullet = this.createBullet();
+      this.spawnBullet(bullet, false);
+      this.activeBullets.push(bullet);
+    }
+  };
+
+  DanmakuWall.prototype.reflowLinearBullets = function () {
+    for (var i = 0; i < this.activeBullets.length; i++) {
+      var bullet = this.activeBullets[i];
+      bullet.y = this.getLaneY(bullet.lane % this.getLaneCount());
+      this.paintBullet(bullet);
+    }
+  };
+
+  DanmakuWall.prototype.replaceMessages = function (list) {
+    var normalized = [];
+    for (var i = 0; i < list.length; i++) {
+      normalized.push(this.normalizeMessage(list[i] || {}));
+    }
+    this.messages = normalized;
+    this.emptyHint.style.display = normalized.length ? 'none' : 'flex';
+    this.mode = 'linear';
+    this.updateStageState();
+    this.seedBullets();
+    this.ensurePopulation();
+  };
+
+  DanmakuWall.prototype.fetchFeed = function (manual) {
+    var self = this;
+    fetch('api/danmaku.php?viewer=' + encodeURIComponent(this.viewer) + '&scope=feed&limit=180', { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data.success) throw new Error(data.message || '加载留言失败');
+        self.dailyKey = data.dailyKey || '';
+        self.updatedAt = data.updatedAt || '';
+        self.updateMeta();
+        self.updateRemaining(data.remainingToday);
+        self.updateTotal(data.total);
+        self.replaceMessages(Array.isArray(data.messages) ? data.messages : []);
+        if (self.panel.classList.contains('is-open')) self.markSeen();
+        if (manual) {
+          self.updateStatus('留言墙已刷新。今天你还可以发送 <strong id="wall-remaining-count">' + self.remainingToday + '</strong> 条留言。');
+          self.remainingCountEl = document.getElementById('wall-remaining-count') || self.remainingCountEl;
+        }
+      })
+      .catch(function (err) {
+        self.updateStatus('留言加载失败：' + escapeHtml(err.message), 'error');
+      });
+  };
+
+  DanmakuWall.prototype.fetchMine = function (manual) {
+    var self = this;
+    if (this.loadingMine) return;
+    this.loadingMine = true;
+    this.mineListEl.innerHTML = '<div class="wall-empty-block">正在加载你的留言记录…</div>';
+    fetch('api/danmaku.php?viewer=' + encodeURIComponent(this.viewer) + '&scope=mine', { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data.success) throw new Error(data.message || '加载失败');
+        self.myMessages = Array.isArray(data.messages) ? data.messages : [];
+        self.updateRemaining(data.remainingToday);
+        self.renderMine();
+        if (manual) {
+          self.updateStatus('我的发送记录已刷新。今天你还可以发送 <strong id="wall-remaining-count">' + self.remainingToday + '</strong> 条留言。');
+          self.remainingCountEl = document.getElementById('wall-remaining-count') || self.remainingCountEl;
+        }
+      })
+      .catch(function (err) {
+        self.mineListEl.innerHTML = '<div class="wall-empty-block">加载失败：' + escapeHtml(err.message) + '</div>';
+      })
+      .finally(function () {
+        self.loadingMine = false;
+      });
+  };
+
+  DanmakuWall.prototype.renderMine = function () {
+    if (!this.myMessages.length) {
+      this.mineListEl.innerHTML = '<div class="wall-empty-block">你暂时还没有发送过留言。<br>第一句祝福就从这里开始吧。</div>';
+      return;
+    }
+    this.mineListEl.innerHTML = this.myMessages.map(function (item) {
+      var hiddenFor = Array.isArray(item.hiddenFor) ? item.hiddenFor : [];
+      return '' +
+        '<article class="wall-mine-item">' +
+          '<div class="wall-mine-item-head">' +
+            '<div><div class="wall-mine-name">' + escapeHtml(item.displayName || '匿名同学') + '</div></div>' +
+            '<div class="wall-mine-time">' + escapeHtml(item.createdDate || '') + '<br>' + escapeHtml(((item.createdAt || '').slice(11, 16) || '')) + '</div>' +
+          '</div>' +
+          '<div style="color:rgba(255,245,228,.94); line-height:1.9; word-break:break-word;">' + escapeHtml(item.content || '') + '</div>' +
+          '<div class="wall-chip-row">' +
+            '<span class="wall-chip">' + (item.anonymous ? '匿名发送' : '实名发送') + '</span>' +
+            '<span class="wall-chip">字号 ' + escapeHtml(String(item.fontSize || 18)) + ' px</span>' +
+            '<span class="wall-chip">颜色 ' + escapeHtml(item.color || '#C9A84C') + '</span>' +
+            '<span class="wall-chip">' + (hiddenFor.length ? ('不给 ' + escapeHtml(hiddenFor.join('、')) + ' 看') : '全员可见') + '</span>' +
+          '</div>' +
+        '</article>';
+    }).join('');
+  };
+
+  DanmakuWall.prototype.submit = function () {
+    var self = this;
+    if (this.sending) return;
+    var content = (this.textarea.value || '').trim();
+    if (!content) {
+      this.updateStatus('请先输入留言内容。', 'error');
+      return;
+    }
+    if (content.length > 50) {
+      this.updateStatus('单条留言不能超过 50 个字。', 'error');
+      return;
+    }
+    if (this.remainingToday <= 0) {
+      this.updateStatus('你今天的留言次数已用完，请明天再来。', 'error');
+      return;
+    }
+
+    this.sending = true;
+    this.submitBtn.disabled = true;
+    this.updateStatus('留言发送中，请稍候…');
+
+    fetch('api/danmaku.php', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        author: this.viewer,
+        content: content,
+        anonymous: !!this.anonymous.checked,
+        color: this.colorInput.value,
+        fontSize: parseInt(this.fontSizeSelect.value, 10) || 18,
+        hiddenFor: this.getHiddenFor()
+      })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data.success) throw new Error(data.message || '发送失败');
+        self.textarea.value = '';
+        self.updateCharCount();
+        self.anonymous.checked = false;
+        self.colorInput.value = '#c9a84c';
+        self.fontSizeSelect.value = '18';
+        Array.prototype.forEach.call(self.blacklistBody.querySelectorAll('input[type="checkbox"]'), function (node) {
+          node.checked = false;
+        });
+        self.updateSelectedSummary();
+        self.updateRemaining(data.remainingToday);
+        self.dailyKey = data.dailyKey || self.dailyKey;
+        self.updatedAt = data.updatedAt || self.updatedAt;
+        self.updateMeta();
+        self.updateTotal(data.total);
+        self.replaceMessages(Array.isArray(data.messages) ? data.messages : []);
+        self.updateStatus('留言发送成功。今天你还可以发送 <strong id="wall-remaining-count">' + self.remainingToday + '</strong> 条留言。', 'success');
+        self.remainingCountEl = document.getElementById('wall-remaining-count') || self.remainingCountEl;
+        if (self.currentTab === 'mine') self.fetchMine(false);
+      })
+      .catch(function (err) {
+        self.updateStatus('发送失败：' + escapeHtml(err.message), 'error');
+      })
+      .finally(function () {
+        self.sending = false;
+        self.submitBtn.disabled = self.remainingToday <= 0;
+      });
+  };
+
+  DanmakuWall.prototype.startPolling = function () {
+    var self = this;
+    this.stopPolling();
+    this.pollTimer = setInterval(function () {
+      self.fetchFeed(false);
+      if (self.currentTab === 'mine') self.fetchMine(false);
+    }, 45000);
+  };
+
+  DanmakuWall.prototype.stopPolling = function () {
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = 0;
+    }
+  };
+
+  DanmakuWall.prototype.updateStageState = function () {
+    var text = '当前状态：线性滚动';
+    if (this.mode === 'paused') text = '当前状态：已暂停';
+    if (this.mode === 'vortex') text = '当前状态：涡流汇聚';
+    if (this.mode === 'releasing') text = '当前状态：涡流发散中';
+    this.stageStateEl.textContent = text;
+  };
+
+  DanmakuWall.prototype.togglePause = function () {
+    if (!this.messages.length) return;
+    this.mode = this.mode === 'paused' ? 'linear' : 'paused';
+    this.updateStageState();
+  };
+
+  DanmakuWall.prototype.activateVortex = function () {
+    if (!this.activeBullets.length) return;
+    this.mode = 'vortex';
+    this.updateStageState();
+    var total = this.activeBullets.length;
+    var radiusBase = Math.min(this.stageWidth, this.stageHeight) * .16;
+    var radiusStep = Math.max(10, Math.min(20, Math.min(this.stageWidth, this.stageHeight) * .035));
+    for (var i = 0; i < total; i++) {
+      var bullet = this.activeBullets[i];
+      bullet.angle = (Math.PI * 2 * i) / Math.max(1, total);
+      bullet.currentRadius = Math.hypot((bullet.x - this.centerX), (bullet.y - this.centerY));
+      bullet.targetRadius = radiusBase + (i % 5) * radiusStep;
+      bullet.angularVelocity = (i % 2 === 0 ? 1 : -1) * (.45 + (i % 7) * .06);
+    }
+  };
+
+  DanmakuWall.prototype.releaseFromVortex = function () {
+    if (!this.activeBullets.length) return;
+    this.mode = 'releasing';
+    this.updateStageState();
+    var spread = this.stageWidth + 180;
+    for (var i = 0; i < this.activeBullets.length; i++) {
+      var bullet = this.activeBullets[i];
+      bullet.releaseProgress = 0;
+      bullet.releaseFromX = bullet.x;
+      bullet.releaseFromY = bullet.y;
+      bullet.lane = this.nextLane % this.getLaneCount();
+      this.nextLane += 1;
+      bullet.releaseToX = (i / Math.max(1, this.activeBullets.length)) * spread - 30;
+      bullet.releaseToY = this.getLaneY(bullet.lane);
+      bullet.speed = this.computeSpeed(bullet.message || { fontSize: 18 });
+    }
+  };
+
+  DanmakuWall.prototype.startLoop = function () {
+    var self = this;
+    function frame(ts) {
+      if (!self.lastTick) self.lastTick = ts;
+      var dt = Math.min(.05, (ts - self.lastTick) / 1000);
+      self.lastTick = ts;
+      self.tick(dt);
+      self.rafId = requestAnimationFrame(frame);
+    }
+    this.rafId = requestAnimationFrame(frame);
+  };
+
+  DanmakuWall.prototype.tick = function (dt) {
+    if (!this.activeBullets.length) return;
+
+    if (this.mode === 'linear') {
+      for (var i = 0; i < this.activeBullets.length; i++) {
+        var bullet = this.activeBullets[i];
+        bullet.x -= bullet.speed * dt;
+        if (bullet.x + bullet.width < -40) {
+          this.spawnBullet(bullet, false);
+        } else {
+          this.paintBullet(bullet);
+        }
+      }
+      this.ensurePopulation();
+      return;
+    }
+
+    if (this.mode === 'paused') {
+      for (var j = 0; j < this.activeBullets.length; j++) this.paintBullet(this.activeBullets[j]);
+      return;
+    }
+
+    if (this.mode === 'vortex') {
+      for (var k = 0; k < this.activeBullets.length; k++) {
+        var vortexBullet = this.activeBullets[k];
+        vortexBullet.currentRadius += (vortexBullet.targetRadius - vortexBullet.currentRadius) * .08;
+        vortexBullet.angle += vortexBullet.angularVelocity * dt;
+        vortexBullet.x = this.centerX + Math.cos(vortexBullet.angle) * vortexBullet.currentRadius - vortexBullet.width / 2;
+        vortexBullet.y = this.centerY + Math.sin(vortexBullet.angle) * vortexBullet.currentRadius - vortexBullet.height / 2;
+        this.paintBullet(vortexBullet);
+      }
+      return;
+    }
+
+    if (this.mode === 'releasing') {
+      var completed = true;
+      for (var m = 0; m < this.activeBullets.length; m++) {
+        var releaseBullet = this.activeBullets[m];
+        releaseBullet.releaseProgress += dt / .55;
+        if (releaseBullet.releaseProgress < 1) completed = false;
+        var p = Math.min(1, releaseBullet.releaseProgress);
+        var eased = 1 - Math.pow(1 - p, 3);
+        releaseBullet.x = releaseBullet.releaseFromX + (releaseBullet.releaseToX - releaseBullet.releaseFromX) * eased;
+        releaseBullet.y = releaseBullet.releaseFromY + (releaseBullet.releaseToY - releaseBullet.releaseFromY) * eased;
+        this.paintBullet(releaseBullet);
+      }
+      if (completed) {
+        this.mode = 'linear';
+        this.updateStageState();
+      }
+    }
+  };
+
+  window.addEventListener('beforeunload', function () {
+    if (state.wall) state.wall.stopPolling();
+  });
+})();
+</script>
+</body>
+</html>

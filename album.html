@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>同学录 · 班级相册</title>
+<link rel="stylesheet" href="assets/css/common.css">
+<style>
+  html, body { overflow-x: hidden; overflow-y: auto; }
+  .album-wrap { position:relative; z-index:var(--z-form); max-width:900px; margin:0 auto; padding:88px 28px 70px; }
+  .album-header { text-align:center; margin-bottom:32px; }
+  .album-title { font-family:'Ma Shan Zheng',cursive; font-size:42px; color:var(--ink); margin-bottom:8px; text-shadow:1px 2px 4px rgba(0,0,0,0.06); }
+  .album-subtitle { font-family:'Noto Serif SC',serif; font-weight:300; font-size:13px; color:rgba(80,50,20,0.45); letter-spacing:.15em; }
+
+  /* ── 分区标题 ── */
+  .sec-label {
+    display:flex; align-items:center; gap:10px; margin-bottom:14px;
+    font-family:'ZCOOL XiaoWei',serif; font-size:12px;
+    color:rgba(100,65,20,0.5); letter-spacing:.2em;
+  }
+  .sec-label::after { content:''; flex:1; height:1px; background:linear-gradient(to right,rgba(160,120,60,0.18),transparent); }
+
+  /* ══ 全景区块 ══ */
+  .pano-section { margin-bottom:36px; display:block; }
+
+  /* 空状态占位 */
+  .pano-empty-state {
+    display:none;
+    flex-direction:column; align-items:center; justify-content:center;
+    height:220px;
+    border-radius:8px;
+    border:1px dashed rgba(160,120,60,0.22);
+    background: linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,248,228,0.12));
+    backdrop-filter: blur(2px);
+    text-align:center; gap:14px;
+  }
+  .pano-empty-state.show { display:flex; }
+  .pano-empty-icon {
+    font-size:48px; opacity:0.25;
+  }
+  .pano-empty-title {
+    font-family:'Ma Shan Zheng',cursive; font-size:22px;
+    color:rgba(120,80,30,0.5); letter-spacing:0.1em;
+  }
+  .pano-empty-sub {
+    font-family:'Noto Serif SC',serif; font-size:12px;
+    color:rgba(120,80,30,0.32); letter-spacing:0.1em; line-height:1.9;
+  }
+
+  .pano-viewer {
+    position:relative; width:100%; height:420px;
+    border-radius:8px; overflow:hidden; background:#0c0e0a;
+    border:1px solid rgba(160,120,60,0.14);
+  }
+  @media(max-width:600px){ .pano-viewer{ height:260px; } }
+
+  #pano-canvas { position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:grab; }
+  #pano-canvas:active{ cursor:grabbing; }
+
+  .pano-overlay { position:absolute; inset:0; z-index:8; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(10,12,8,0.88); transition:opacity .4s; }
+  .pano-overlay.done{ opacity:0; pointer-events:none; }
+  .pano-spin { width:36px; height:36px; border-radius:50%; border:2px solid rgba(201,168,76,0.15); border-top-color:rgba(201,168,76,0.6); animation:spin .9s linear infinite; margin-bottom:12px; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .pano-load-txt { font-family:'ZCOOL XiaoWei',serif; font-size:12px; color:rgba(201,168,76,0.45); letter-spacing:.2em; }
+  /* 加载进度条 */
+  .pano-progress-wrap { width:160px; height:3px; background:rgba(201,168,76,0.1); border-radius:2px; margin-top:14px; overflow:hidden; }
+  .pano-progress-bar { height:100%; width:0%; background:linear-gradient(to right,rgba(201,168,76,0.4),rgba(201,168,76,0.85)); border-radius:2px; transition:width .3s ease; }
+
+  .pano-hint { position:absolute; top:12px; left:50%; transform:translateX(-50%); z-index:9; pointer-events:none; font-family:'ZCOOL XiaoWei',serif; font-size:11px; color:rgba(240,210,150,0.6); letter-spacing:.12em; white-space:nowrap; background:rgba(0,0,0,0.35); padding:4px 12px; border-radius:12px; border:1px solid rgba(201,168,76,0.12); animation:hintFade 5.5s ease forwards; }
+  @keyframes hintFade{ 0%,10%{opacity:1} 80%{opacity:1} 100%{opacity:0} }
+
+  .pano-name { position:absolute; bottom:48px; left:14px; z-index:9; pointer-events:none; font-family:'ZCOOL XiaoWei',serif; font-size:13px; color:rgba(240,210,150,0.82); background:rgba(0,0,0,0.42); padding:3px 12px; border-radius:12px; border:1px solid rgba(201,168,76,0.15); opacity:0; transition:opacity .3s; }
+  .pano-name.show{ opacity:1; }
+
+  .pano-fullbtn { position:absolute; top:10px; right:10px; z-index:9; width:30px; height:30px; border-radius:5px; background:rgba(0,0,0,0.42); border:1px solid rgba(201,168,76,0.18); color:rgba(240,210,150,0.6); font-size:13px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .2s; }
+  .pano-fullbtn:hover{ background:rgba(80,55,10,0.55); color:rgba(240,210,150,.9); }
+
+  .pano-bar { position:absolute; bottom:0; left:0; right:0; z-index:9; display:flex; gap:8px; padding:10px 12px; background:linear-gradient(to top,rgba(0,0,0,0.65),transparent); overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+  .pano-bar::-webkit-scrollbar{ display:none; }
+  .pano-thumb { flex-shrink:0; width:60px; height:38px; border-radius:4px; overflow:hidden; cursor:pointer; border:2px solid rgba(255,255,255,0.12); transition:border-color .2s,transform .2s; }
+  .pano-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .pano-thumb:hover{ border-color:rgba(201,168,76,.5); transform:scale(1.06); }
+  .pano-thumb.active{ border-color:rgba(201,168,76,.9); }
+
+  /* ══ 照片区（完全独立，不受全景影响）══ */
+  .photos-sec{ margin-top:0; }
+  .pagination-info { text-align:center; margin-bottom:14px; font-family:'Noto Serif SC',serif; font-size:12px; color:rgba(120,80,30,0.42); letter-spacing:.1em; }
+  .photo-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:28px; }
+  @media(max-width:600px){ .photo-grid{ grid-template-columns:repeat(2,1fr); } }
+
+  .photo-item { position:relative; overflow:hidden; background:rgba(0,0,0,0.03); border-radius:3px; cursor:pointer; transition:transform .3s,box-shadow .3s; aspect-ratio:1/1; }
+  .photo-item.wide{ aspect-ratio:4/3; grid-column:span 2; }
+  .photo-item.tall{ aspect-ratio:3/4; grid-row:span 2; }
+  .photo-item:hover{ transform:translateY(-3px); box-shadow:0 6px 20px rgba(80,40,10,0.18); }
+  .photo-item img{ width:100%; height:100%; object-fit:cover; display:block; transition:transform .5s; }
+  .photo-item:hover img{ transform:scale(1.05); }
+  .photo-item.loading::before{ content:''; position:absolute; inset:0; background:linear-gradient(90deg,rgba(160,120,60,0.06) 25%,rgba(160,120,60,0.12) 50%,rgba(160,120,60,0.06) 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; z-index:2; }
+  @keyframes shimmer{ 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+  .photo-item.frame-retro{ border:6px solid #e8d5a8; box-shadow:0 0 0 2px #b8903a,inset 0 0 10px rgba(0,0,0,0.18); border-radius:2px; }
+  .photo-item.frame-retro::before{ content:''; position:absolute; inset:3px; border:1px solid rgba(200,168,100,0.45); z-index:3; pointer-events:none; border-radius:1px; }
+  .photo-item.frame-film{ border:5px solid #1c1c1c; box-shadow:inset 0 0 0 2px #2e2e2e,0 4px 16px rgba(0,0,0,.35); border-radius:2px; filter:contrast(1.04) saturate(.9); }
+  .photo-item.frame-polaroid{ border:8px solid #fff; border-bottom:32px solid #fff; box-shadow:0 2px 14px rgba(0,0,0,0.16),0 0 0 1px rgba(0,0,0,0.04); border-radius:1px; position:relative; }
+  .photo-item.frame-polaroid::after{ content:attr(data-caption); position:absolute; bottom:-28px; left:0; right:0; text-align:center; font-family:'Ma Shan Zheng',cursive; font-size:12px; color:rgba(80,50,20,0.55); letter-spacing:.05em; line-height:24px; pointer-events:none; }
+  .photo-item.frame-none{ border:1px solid rgba(160,120,60,0.14); }
+  .photo-caption{ position:absolute; bottom:0; left:0; right:0; padding:6px 10px; background:linear-gradient(to top,rgba(0,0,0,.52),transparent); color:var(--gold-pale); font-family:'ZCOOL XiaoWei',serif; font-size:11px; letter-spacing:.08em; opacity:0; transition:opacity .3s; pointer-events:none; }
+  .photo-item:hover .photo-caption{ opacity:1; }
+
+  .pagination{ display:flex; justify-content:center; align-items:center; gap:8px; margin-top:28px; flex-wrap:wrap; }
+  .page-btn{ min-width:36px; height:36px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.32); border:1px solid rgba(160,120,60,.18); border-radius:4px; font-family:'Noto Serif SC',serif; font-size:13px; color:var(--ink-light); cursor:pointer; transition:all .25s; padding:0 10px; }
+  .page-btn:hover{ background:rgba(255,255,255,.52); border-color:var(--gold); color:var(--ink); }
+  .page-btn.active{ background:linear-gradient(160deg,#5c3010,#3d1e08); color:var(--gold-pale); border-color:rgba(180,130,50,.38); cursor:default; }
+  .page-btn.disabled{ opacity:.32; cursor:not-allowed; pointer-events:none; }
+  .photo-grid.flip{ animation:pageFlip .35s ease; }
+  @keyframes pageFlip{ 0%{opacity:0;transform:translateX(20px)} 100%{opacity:1;transform:none} }
+
+  .empty-state{ text-align:center; padding:80px 20px; color:rgba(120,80,30,.38); }
+  .empty-state .icon{ font-size:48px; margin-bottom:14px; opacity:.28; }
+  .empty-state p{ font-family:'Noto Serif SC',serif; font-size:14px; line-height:2.2; font-weight:300; }
+
+  .lightbox{ position:fixed; inset:0; z-index:200; background:rgba(0,0,0,.9); display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .3s; }
+  .lightbox.open{ opacity:1; pointer-events:all; }
+  .lightbox-img{ max-width:90vw; max-height:85vh; border-radius:2px; box-shadow:0 10px 60px rgba(0,0,0,.6); transform:scale(.92); transition:transform .3s; object-fit:contain; }
+  .lightbox.open .lightbox-img{ transform:scale(1); }
+  .lightbox-caption{ position:absolute; bottom:28px; left:50%; transform:translateX(-50%); color:rgba(240,210,150,.75); font-family:'ZCOOL XiaoWei',serif; font-size:14px; letter-spacing:.15em; white-space:nowrap; }
+  .lightbox-close{ position:absolute; top:20px; right:24px; color:rgba(240,210,150,.6); font-size:28px; cursor:pointer; transition:color .2s; background:none; border:none; }
+  .lightbox-close:hover{ color:var(--gold-pale); }
+  .lightbox-nav{ position:absolute; top:50%; transform:translateY(-50%); color:rgba(240,210,150,.55); font-size:36px; cursor:pointer; background:rgba(0,0,0,.3); border:none; border-radius:50%; width:48px; height:48px; display:flex; align-items:center; justify-content:center; transition:background .2s,color .2s; }
+  .lightbox-nav:hover{ background:rgba(0,0,0,.6); color:var(--gold-pale); }
+  .lightbox-prev{ left:16px; }
+  .lightbox-next{ right:16px; }
+  .lightbox-nav.hidden{ opacity:0; pointer-events:none; }
+  .lightbox-counter{ position:absolute; top:20px; left:50%; transform:translateX(-50%); color:rgba(240,210,150,.45); font-family:'ZCOOL XiaoWei',serif; font-size:12px; letter-spacing:.15em; }
+</style>
+</head>
+<body>
+<div class="background-layer">
+  <!-- Layer 2: Sticker Layer (nested as child of background) -->
+  <div class="sticker-layer"></div>
+</div>
+<div class="form-layer">
+  <div class="watermark">相册</div>
+  <nav class="top-nav">
+    <div class="user-greeting" id="user-greeting">同学你好</div>
+    <div class="nav-links">
+      <a class="nav-link" href="preface.html">前言</a>
+      <a class="nav-link" href="roster.html">同学录</a>
+      <a class="nav-link active" href="album.html">相册</a>
+    </div>
+  </nav>
+  <div class="album-wrap">
+    <div class="album-header fade-in">
+      <div class="ornament-line">❦ 班 级 相 册 ❦</div>
+      <h1 class="album-title">我们的时光</h1>
+      <p class="album-subtitle">每一张照片，都是一段珍贵的回忆</p>
+    </div>
+
+    <!-- 360° 全景区：始终显示，没有全景图时显示占位引导 -->
+    <div class="pano-section fade-in" id="pano-section">
+      <div class="sec-label">✦ 360° 校园全景</div>
+
+      <!-- 空状态（没有全景图时显示） -->
+      <div class="pano-empty-state" id="pano-empty">
+        <div class="pano-empty-icon">🏫</div>
+        <div class="pano-empty-title">校园全景</div>
+        <div class="pano-empty-sub">暂未上传全景图片<br>通过后台「360°全景」上传后即可在此查看</div>
+      </div>
+
+      <!-- 查看器（有全景图时显示） -->
+      <div class="pano-viewer" id="pano-viewer" style="display:none;">
+        <canvas id="pano-canvas"></canvas>
+        <div class="pano-overlay" id="pano-overlay">
+          <div class="pano-spin"></div>
+          <div class="pano-load-txt" id="pano-load-txt">加载全景图…</div>
+          <div class="pano-progress-wrap"><div class="pano-progress-bar" id="pano-progress-bar"></div></div>
+        </div>
+        <div class="pano-hint" id="pano-hint">拖动四处张望 · 滚轮缩放 · 捏合变焦</div>
+        <div class="pano-name" id="pano-name"></div>
+        <button class="pano-fullbtn" id="pano-fullbtn">⛶</button>
+        <div class="pano-bar" id="pano-bar"></div>
+      </div>
+    </div>
+
+    <!-- 照片区（完全独立，始终占完整宽度） -->
+    <div class="photos-sec" id="photos-sec">
+      <div class="sec-label" id="photos-sec-label" style="display:none;">✦ 班级照片</div>
+      <div class="pagination-info" id="pagination-info"></div>
+      <div class="photo-grid" id="photo-grid"></div>
+      <div class="pagination" id="pagination"></div>
+    </div>
+
+    <div class="page-footer" id="page-footer">同学录 · 青春回忆</div>
+  </div>
+</div>
+<div class="overlay-effect-layer"></div>
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightbox-close">✕</button>
+  <button class="lightbox-nav lightbox-prev" id="lb-prev">‹</button>
+  <button class="lightbox-nav lightbox-next" id="lb-next">›</button>
+  <img class="lightbox-img" id="lightbox-img" src="" alt="">
+  <div class="lightbox-caption" id="lightbox-caption"></div>
+  <div class="lightbox-counter" id="lb-counter"></div>
+</div>
+
+<script src="assets/js/common.js?v=10.0.0"></script>
+<script src="assets/js/overlay.js?v=10.0.0"></script>
+<script>
+(function(){
+'use strict';
+var viewer = Session.getName();
+if(!viewer) return;
+Session.renderGreeting('#user-greeting');
+// 从站点配置读取粒子效果
+  fetch('data/site_config.json')
+    .then(function(r){ return r.json(); })
+    .then(function(s){
+      var pcfg = (s.particles && s.particles['album']) || {enabled:true, preset:'sakura'};
+      if (!pcfg.enabled) return;
+      var preset = OverlayPresets[pcfg.preset] || OverlayPresets.sakura;
+      if (preset) Overlay.init(preset);
+      renderFooter(s);
+    })
+    .catch(function(){ Overlay.init(OverlayPresets.sakura); });
+
+/* ══════ 全景查看器 ══════ */
+var R={lon:0,lat:0,tLon:0,tLat:0,fov:75,tFov:75};
+var drag={on:false,px:0,py:0},lastTouch=null,pinchD=0;
+var panos=[],panoIdx=-1,threeReady=false;
+var renderer,scene,camera,sphere;
+
+function threeInit(){
+  if(threeReady)return; threeReady=true;
+  var cv=document.getElementById('pano-canvas');
+  renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(75,1,.1,1000);
+  camera.position.set(0,0,.01);
+  var geo=new THREE.SphereGeometry(500,60,40);
+  geo.scale(-1,1,1);
+  sphere=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0x0c0e0a}));
+  scene.add(sphere);
+  threeResize();
+  window.addEventListener('resize',threeResize);
+  (function loop(){
+    requestAnimationFrame(loop);
+    R.lon+=(R.tLon-R.lon)*.08; R.lat+=(R.tLat-R.lat)*.08; R.fov+=(R.tFov-R.fov)*.1;
+    R.lat=Math.max(-85,Math.min(85,R.lat));
+    camera.fov=R.fov; camera.updateProjectionMatrix();
+    var phi=THREE.MathUtils.degToRad(90-R.lat), th=THREE.MathUtils.degToRad(R.lon);
+    camera.lookAt(500*Math.sin(phi)*Math.cos(th),500*Math.cos(phi),500*Math.sin(phi)*Math.sin(th));
+    renderer.render(scene,camera);
+  })();
+  bindPanoEvents(cv);
+}
+
+function threeResize(){
+  var v=document.getElementById('pano-viewer');
+  if(!v||!renderer)return;
+  renderer.setSize(v.clientWidth,v.clientHeight);
+  camera.aspect=v.clientWidth/v.clientHeight;
+  camera.updateProjectionMatrix();
+}
+
+function loadPano(i){
+  if(i===panoIdx||!panos[i])return;
+  panoIdx=i; var p=panos[i];
+  var nameEl=document.getElementById('pano-name');
+  nameEl.textContent=p.title||''; nameEl.classList.toggle('show',!!p.title);
+  document.querySelectorAll('.pano-thumb').forEach(function(el,j){el.classList.toggle('active',j===i);});
+  var ov=document.getElementById('pano-overlay');
+  ov.classList.remove('done');
+  document.getElementById('pano-load-txt').textContent='加载全景图…';
+  // 模拟进度条（图片加载无法获取真实进度，用时间模拟）
+  var pb=document.getElementById('pano-progress-bar');
+  if(pb){pb.style.width='0%';}
+  var prog=0, progTimer=setInterval(function(){
+    prog=Math.min(prog+Math.random()*8,88);
+    if(pb) pb.style.width=prog+'%';
+  },200);
+  new THREE.TextureLoader().load('album/panoramas/'+p.file,
+    function(tex){
+      tex.minFilter=THREE.LinearFilter;
+      sphere.material=new THREE.MeshBasicMaterial({map:tex});
+      clearInterval(progTimer);
+      var pb=document.getElementById('pano-progress-bar');
+      if(pb) pb.style.width='100%';
+      setTimeout(function(){ ov.classList.add('done'); }, 300);
+    },
+    undefined,
+    function(){ clearInterval(progTimer); document.getElementById('pano-load-txt').textContent='加载失败，请检查文件格式'; }
+  );
+  R.lon=0;R.lat=0;R.tLon=0;R.tLat=0;R.fov=75;R.tFov=75;
+}
+
+function buildBar(){
+  var bar=document.getElementById('pano-bar');
+  bar.innerHTML='';
+  bar.style.display=panos.length>1?'flex':'none';
+  panos.forEach(function(p,i){
+    var el=document.createElement('div');
+    el.className='pano-thumb'+(i===0?' active':'');
+    var img=document.createElement('img');
+    img.src='album/panoramas/'+p.file; img.alt=p.title||''; img.loading='lazy';
+    el.appendChild(img);
+    el.addEventListener('click',function(){loadPano(i);});
+    bar.appendChild(el);
+  });
+}
+
+function bindPanoEvents(cv){
+  cv.addEventListener('mousedown',function(e){drag.on=true;drag.px=e.clientX;drag.py=e.clientY;});
+  window.addEventListener('mouseup',function(){drag.on=false;});
+  window.addEventListener('mousemove',function(e){
+    if(!drag.on)return;
+    R.tLon-=(e.clientX-drag.px)*.2; R.tLat+=(e.clientY-drag.py)*.16;
+    drag.px=e.clientX; drag.py=e.clientY;
+  });
+  cv.addEventListener('touchstart',function(e){
+    if(e.touches.length===1)lastTouch={x:e.touches[0].clientX,y:e.touches[0].clientY};
+    else if(e.touches.length===2)pinchD=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    e.preventDefault();
+  },{passive:false});
+  cv.addEventListener('touchmove',function(e){
+    if(e.touches.length===1&&lastTouch){
+      R.tLon-=(e.touches[0].clientX-lastTouch.x)*.24; R.tLat+=(e.touches[0].clientY-lastTouch.y)*.2;
+      lastTouch={x:e.touches[0].clientX,y:e.touches[0].clientY};
+    } else if(e.touches.length===2){
+      var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      R.tFov=Math.max(30,Math.min(100,R.tFov+(pinchD-d)*.1)); pinchD=d;
+    }
+    e.preventDefault();
+  },{passive:false});
+  cv.addEventListener('touchend',function(){lastTouch=null;});
+  cv.addEventListener('wheel',function(e){R.tFov=Math.max(30,Math.min(100,R.tFov+e.deltaY*.04));e.preventDefault();},{passive:false});
+  document.getElementById('pano-fullbtn').addEventListener('click',function(){
+    var v=document.getElementById('pano-viewer');
+    if(!document.fullscreenElement){v.requestFullscreen&&v.requestFullscreen();this.textContent='✕';setTimeout(threeResize,100);}
+    else{document.exitFullscreen&&document.exitFullscreen();this.textContent='⛶';setTimeout(threeResize,100);}
+  });
+  document.addEventListener('fullscreenchange',function(){
+    if(!document.fullscreenElement){document.getElementById('pano-fullbtn').textContent='⛶';setTimeout(threeResize,100);}
+  });
+}
+
+/* ══════ 加载全景数据 ══════ */
+fetch('album/panoramas.json?v='+Date.now()).then(function(r){return r.json();}).then(function(data){
+  panos=data.panoramas||[];
+  if(!panos.length){
+    // 没有全景图：显示占位空状态
+    document.getElementById('pano-empty').classList.add('show');
+    return;
+  }
+  // 有全景图：显示查看器，隐藏空状态
+  document.getElementById('pano-empty').style.display='none';
+  document.getElementById('pano-viewer').style.display='block';
+  document.getElementById('pano-section').classList.add('show');
+  // 有全景图才显示照片区分隔标题
+  document.getElementById('photos-sec-label').style.display='flex';
+  var s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+  s.onload=function(){threeInit();buildBar();loadPano(0);};
+  document.head.appendChild(s);
+  setTimeout(function(){var h=document.getElementById('pano-hint');if(h)h.style.display='none';},5500);
+}).catch(function(){
+  // 加载失败也显示空状态
+  document.getElementById('pano-empty').classList.add('show');
+});
+
+/* ══════ 班级照片（独立，完整宽度）══════ */
+var PAGE_SIZE=9,curPage=1,allPhotos=[];
+
+fetch('album/photos.json?v='+Date.now()).then(function(r){return r.json();}).then(function(data){
+  allPhotos=data.photos||[];
+  renderPage(1);
+  setTimeout(function(){
+    var h=document.querySelector('.album-header');
+    if(h)h.classList.add('visible');
+  },150);
+}).catch(showEmpty);
+
+// IntersectionObserver 懒加载实例（全局复用）
+var _lazyObserver = null;
+function getLazyObserver(){
+  if(_lazyObserver) return _lazyObserver;
+  if(!('IntersectionObserver' in window))return null;
+  _lazyObserver = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if(!entry.isIntersecting)return;
+      var img=entry.target;
+      var src=img.dataset.src;
+      if(src){
+        img.src=src;
+        img.removeAttribute('data-src');
+        _lazyObserver.unobserve(img);
+      }
+    });
+  },{rootMargin:'200px 0px', threshold:0.01});
+  return _lazyObserver;
+}
+
+function renderPage(pg){
+  curPage=pg;
+  var start=(pg-1)*PAGE_SIZE, photos=allPhotos.slice(start,start+PAGE_SIZE);
+  var total=Math.ceil(allPhotos.length/PAGE_SIZE);
+  var grid=document.getElementById('photo-grid');
+  grid.classList.remove('flip'); void grid.offsetWidth; grid.classList.add('flip');
+  // 先停止旧的观察器，防止内存泄漏
+  if(_lazyObserver){
+    grid.querySelectorAll('img[data-src]').forEach(function(img){
+      _lazyObserver.unobserve(img);
+    });
+  }
+  grid.innerHTML='';
+  if(!allPhotos.length){showEmpty();return;}
+  var observer=getLazyObserver();
+  photos.forEach(function(p,i){
+    var frame=p.frame?'frame-'+p.frame:'frame-none';
+    var item=document.createElement('div');
+    item.className='photo-item loading '+frame+(p.wide?' wide':'')+(p.tall?' tall':'');
+    // 使用 contain 属性限制重排范围，降低滚动卡顿
+    item.style.contain='layout style';
+    var img=document.createElement('img');
+    img.alt=p.caption||'';
+    img.style.cssText='width:100%;height:100%;object-fit:cover;display:block;';
+    if(observer){
+      // 懒加载：先用占位符，进入视口再加载
+      img.dataset.src='album/photos/'+p.file;
+      img.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'1\' height=\'1\'/%3E';
+    } else {
+      // 降级处理：直接赋値
+      img.src='album/photos/'+p.file;
+      img.loading='lazy';
+    }
+    img.onload=function(){
+      if(!this.dataset.src) item.classList.remove('loading');
+    };
+    img.onerror=function(){item.classList.remove('loading');};
+    img.addEventListener('click',(function(idx){return function(){openLB(idx);};})(i));
+    item.appendChild(img);
+    if(p.caption){var cap=document.createElement('div');cap.className='photo-caption';cap.textContent=p.caption;item.appendChild(cap);}
+    grid.appendChild(item);
+    if(observer) observer.observe(img);
+  });
+  document.getElementById('pagination-info').textContent='第 '+pg+' 页 · 共 '+allPhotos.length+' 张';
+  buildPagination(pg,total);
+}
+
+function buildPagination(cur,total){
+  var pg=document.getElementById('pagination');
+  if(total<=1){pg.innerHTML='';return;}
+  var h='<button class="page-btn'+(cur<=1?' disabled':'')+'" data-page="'+(cur-1)+'">上一页</button>';
+  for(var i=1;i<=total;i++)h+='<button class="page-btn'+(i===cur?' active':'')+'" data-page="'+i+'">'+i+'</button>';
+  h+='<button class="page-btn'+(cur>=total?' disabled':'')+'" data-page="'+(cur+1)+'">下一页</button>';
+  pg.innerHTML=h;
+  pg.querySelectorAll('[data-page]').forEach(function(btn){
+    btn.addEventListener('click',function(){renderPage(parseInt(this.dataset.page));});
+  });
+}
+
+function showEmpty(){
+  document.getElementById('photo-grid').innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="icon">📷</div><p>暂无照片<br>请前往管理后台上传</p></div>';
+  var h=document.querySelector('.album-header');if(h)h.classList.add('visible');
+}
+
+var lb=document.getElementById('lightbox'),lbImg=document.getElementById('lightbox-img'),lbCap=document.getElementById('lightbox-caption');
+var lbIdx=0, lbList=[];
+
+function openLB(idx){
+  lbIdx=idx;
+  var photos=allPhotos.slice((curPage-1)*PAGE_SIZE, curPage*PAGE_SIZE);
+  lbList=photos;
+  var p=lbList[idx];
+  lbImg.src='album/photos/'+p.file;
+  lbCap.textContent=p.caption||'';
+  document.getElementById('lb-counter').textContent=(idx+1)+' / '+lbList.length;
+  document.getElementById('lb-prev').classList.toggle('hidden', idx===0);
+  document.getElementById('lb-next').classList.toggle('hidden', idx===lbList.length-1);
+  lb.classList.add('open');
+}
+document.getElementById('lb-prev').addEventListener('click',function(e){e.stopPropagation();if(lbIdx>0)openLB(lbIdx-1);});
+document.getElementById('lb-next').addEventListener('click',function(e){e.stopPropagation();if(lbIdx<lbList.length-1)openLB(lbIdx+1);});
+document.getElementById('lightbox-close').addEventListener('click',function(){lb.classList.remove('open');});
+lb.addEventListener('click',function(e){if(e.target===lb)lb.classList.remove('open');});
+document.addEventListener('keydown',function(e){
+  if(!lb.classList.contains('open'))return;
+  if(e.key==='Escape'){lb.classList.remove('open');return;}
+  if(e.key==='ArrowLeft'&&lbIdx>0)openLB(lbIdx-1);
+  if(e.key==='ArrowRight'&&lbIdx<lbList.length-1)openLB(lbIdx+1);
+});
+// 触摸滑动切换
+var lbTouchX=0;
+lbImg.addEventListener('touchstart',function(e){lbTouchX=e.touches[0].clientX;},{passive:true});
+lbImg.addEventListener('touchend',function(e){
+  var dx=e.changedTouches[0].clientX-lbTouchX;
+  if(Math.abs(dx)>50){
+    if(dx<0&&lbIdx<lbList.length-1)openLB(lbIdx+1);
+    if(dx>0&&lbIdx>0)openLB(lbIdx-1);
+  }
+},{passive:true});
+FadeIn.init('.fade-in');
+})();
+</script>
+</body>
+</html>

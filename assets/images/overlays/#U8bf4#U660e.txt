@@ -1,0 +1,14 @@
+飘落粒子素材目录
+================
+
+将飘落素材图片放入此目录，在 overlay.js 或页面 JS 中配置：
+
+Overlay.init({
+  type: 'custom',
+  imageSrc: 'assets/images/overlays/你的素材.png',
+  count: 20,
+  imageSize: [14, 32],
+});
+
+推荐：透明底 PNG，尺寸 32~64px
+示例文件名：sakura.png / star.png / heart.png / leaf.png

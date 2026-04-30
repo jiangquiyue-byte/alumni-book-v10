@@ -1,0 +1,9 @@
+{
+    "index_particle": {
+        "enabled": true,
+        "preset": "sakura"
+    },
+    "_comment": "网站全局设置，由后台管理系统维护",
+    "admin_password_hash": "$2y$12$IZyfhjbJdzJhiW5KHtfQ7.bFAFpioJug1NG7ssI6F\/syMNMXLQTxq",
+    "password_updated_at": "2026-03-29 01:11:44"
+}

@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>同学录 · 360° 校园全景</title>
+<link rel="stylesheet" href="assets/css/common.css">
+<style>
+  html, body { overflow: hidden; height: 100%; background: #080a06; }
+
+  /* ─ 背景：沿用纸张纹理但压暗 ─ */
+  .background-layer {
+    background: radial-gradient(ellipse at 40% 30%, rgba(25,20,8,0.96) 0%, #060804 100%);
+  }
+  .background-layer::before, .background-layer::after { display: none; }
+
+  /* ─ 导航 ─ */
+  .top-nav {
+    background: rgba(6,8,4,0.92) !important;
+    border-bottom: 1px solid rgba(201,168,76,0.1) !important;
+    backdrop-filter: blur(8px);
+  }
+
+  /* ─ 主容器 ─ */
+  .pano-wrap {
+    position: relative;
+    z-index: var(--z-form);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ─ 顶部场景选择栏 ─ */
+  .scene-bar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 24px 20px;
+    background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, transparent 100%);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .scene-bar::-webkit-scrollbar { display: none; }
+
+  .scene-thumb {
+    flex-shrink: 0;
+    width: 80px; height: 50px;
+    border-radius: 5px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid rgba(201,168,76,0.2);
+    transition: border-color 0.25s, transform 0.25s;
+    background: rgba(20,18,8,0.6);
+    position: relative;
+  }
+  .scene-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .scene-thumb:hover { border-color: rgba(201,168,76,0.5); transform: translateY(-2px); }
+  .scene-thumb.active { border-color: var(--gold); }
+  .scene-thumb .scene-label {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 2px 5px;
+    background: rgba(0,0,0,0.55);
+    color: rgba(240,210,150,0.9);
+    font-family: 'ZCOOL XiaoWei', serif;
+    font-size: 10px; letter-spacing: 0.08em;
+    text-align: center;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .scene-thumb.active .scene-label { background: rgba(100,70,10,0.7); }
+
+  /* ─ 三维画布区 ─ */
+  #pano-canvas {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    touch-action: none;
+  }
+
+  /* ─ 加载中 overlay ─ */
+  #pano-loading {
+    position: absolute; inset: 0; z-index: 20;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: rgba(6,8,4,0.88);
+    transition: opacity 0.5s;
+  }
+  #pano-loading.hidden { opacity: 0; pointer-events: none; }
+  .loading-ring {
+    width: 48px; height: 48px; border-radius: 50%;
+    border: 3px solid rgba(201,168,76,0.15);
+    border-top-color: rgba(201,168,76,0.7);
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text {
+    font-family: 'ZCOOL XiaoWei', serif;
+    font-size: 13px; color: rgba(201,168,76,0.5);
+    letter-spacing: 0.2em;
+  }
+
+  /* ─ 空状态 ─ */
+  #pano-empty {
+    position: absolute; inset: 0; z-index: 20;
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: rgba(201,168,76,0.35);
+  }
+  #pano-empty .empty-icon { font-size: 64px; margin-bottom: 20px; opacity: 0.4; }
+  #pano-empty h2 {
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 28px; color: rgba(201,168,76,0.45);
+    margin-bottom: 10px; letter-spacing: 0.1em;
+  }
+  #pano-empty p {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 13px; color: rgba(201,168,76,0.3);
+    line-height: 2; text-align: center; letter-spacing: 0.08em;
+  }
+
+  /* ─ 操作提示 ─ */
+  .pano-hint {
+    position: absolute; top: 80px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 25; pointer-events: none;
+    font-family: 'ZCOOL XiaoWei', serif;
+    font-size: 12px; color: rgba(240,210,150,0.55);
+    letter-spacing: 0.15em; white-space: nowrap;
+    background: rgba(0,0,0,0.35); padding: 5px 14px;
+    border-radius: 20px; border: 1px solid rgba(201,168,76,0.15);
+    animation: fadeHint 4s ease forwards;
+  }
+  @keyframes fadeHint {
+    0%   { opacity: 0; }
+    10%  { opacity: 1; }
+    70%  { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  /* ─ 场景名称 ─ */
+  .scene-title {
+    position: absolute; top: 70px; left: 24px;
+    z-index: 25; pointer-events: none;
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 22px; color: rgba(240,210,150,0.7);
+    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    letter-spacing: 0.08em;
+    opacity: 0; transition: opacity 0.4s;
+  }
+  .scene-title.show { opacity: 1; }
+
+  /* ─ 全屏按钮 ─ */
+  .fullscreen-btn {
+    position: absolute; top: 70px; right: 20px; z-index: 25;
+    width: 36px; height: 36px;
+    background: rgba(0,0,0,0.4); border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 6px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: rgba(240,210,150,0.6);
+    transition: background 0.2s, color 0.2s;
+  }
+  .fullscreen-btn:hover {
+    background: rgba(100,70,10,0.5);
+    color: rgba(240,210,150,0.9);
+  }
+
+  /* ─ 陀螺仪按钮（移动端）─ */
+  .gyro-btn {
+    position: absolute; top: 114px; right: 20px; z-index: 25;
+    width: 36px; height: 36px;
+    background: rgba(0,0,0,0.4); border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 6px; cursor: pointer;
+    display: none; align-items: center; justify-content: center;
+    font-size: 16px; color: rgba(240,210,150,0.5);
+    transition: background 0.2s;
+  }
+  .gyro-btn.active { background: rgba(100,70,10,0.6); color: rgba(240,210,150,0.9); border-color: rgba(201,168,76,0.5); }
+  @media (max-width: 768px) { .gyro-btn { display: flex; } }
+</style>
+</head>
+<body>
+
+<div class="background-layer">
+  <!-- Layer 2: Sticker Layer (nested as child of background) -->
+  <div class="sticker-layer"></div>
+</div>
+
+<div class="form-layer" style="background:transparent; height:100%;">
+  <div class="watermark">全景</div>
+  <nav class="top-nav">
+    <div class="user-greeting" id="user-greeting">同学你好</div>
+    <div class="nav-links">
+      <a class="nav-link" href="preface.html">前言</a>
+      <a class="nav-link" href="roster.html">同学录</a>
+      <a class="nav-link active" href="album.html">相册</a>
+    </div>
+  </nav>
+
+  <div class="pano-wrap">
+    <!-- Three.js 画布 -->
+    <canvas id="pano-canvas"></canvas>
+
+    <!-- 加载中 -->
+    <div id="pano-loading">
+      <div class="loading-ring"></div>
+      <div class="loading-text">正在加载全景图…</div>
+    </div>
+
+    <!-- 空状态 -->
+    <div id="pano-empty">
+      <div class="empty-icon">🏫</div>
+      <h2>校园全景</h2>
+      <p>暂无全景图片<br>请在管理后台上传 360° 照片</p>
+    </div>
+
+    <!-- 场景名称 -->
+    <div class="scene-title" id="scene-title"></div>
+
+    <!-- 操作提示 -->
+    <div class="pano-hint" id="pano-hint">拖动画面四处张望 · 滚轮缩放</div>
+
+    <!-- 全屏 -->
+    <button class="fullscreen-btn" id="fullscreen-btn" title="全屏">⛶</button>
+
+    <!-- 陀螺仪（移动端）-->
+    <button class="gyro-btn" id="gyro-btn" title="陀螺仪">📱</button>
+
+    <!-- 底部场景选择栏 -->
+    <div class="scene-bar" id="scene-bar"></div>
+  </div>
+</div>
+
+<script src="assets/js/common.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const viewer = Session.getName();
+  if (!viewer) return;
+  Session.renderGreeting('#user-greeting');
+
+  // ─── 状态 ───
+  let renderer, scene, camera, sphere, texture;
+  let isDragging = false, prevX = 0, prevY = 0;
+  let lon = 0, lat = 0, targetLon = 0, targetLat = 0;
+  let fov = 75, targetFov = 75;
+  let gyroEnabled = false;
+  let currentIdx = -1;
+  let panoramas = [];
+  const loader = new THREE.TextureLoader();
+
+  // ─── Three.js 初始化 ───
+  const canvas = document.getElementById('pano-canvas');
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  scene  = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+  camera.position.set(0, 0, 0.01);
+
+  // 内面朝向的球体
+  const geo = new THREE.SphereGeometry(500, 60, 40);
+  geo.scale(-1, 1, 1);  // 翻转法线到内侧
+  const mat = new THREE.MeshBasicMaterial({ color: 0x111108 });
+  sphere = new THREE.Mesh(geo, mat);
+  scene.add(sphere);
+
+  // ─── 渲染循环 ───
+  function render() {
+    requestAnimationFrame(render);
+
+    // 惯性平滑
+    lon += (targetLon - lon) * 0.08;
+    lat += (targetLat - lat) * 0.08;
+    fov += (targetFov - fov) * 0.1;
+
+    lat = Math.max(-85, Math.min(85, lat));
+    camera.fov = fov;
+    camera.updateProjectionMatrix();
+
+    const phi   = THREE.MathUtils.degToRad(90 - lat);
+    const theta = THREE.MathUtils.degToRad(lon);
+    camera.lookAt(
+      500 * Math.sin(phi) * Math.cos(theta),
+      500 * Math.cos(phi),
+      500 * Math.sin(phi) * Math.sin(theta)
+    );
+    renderer.render(scene, camera);
+  }
+
+  function resize() {
+    const w = window.innerWidth, h = window.innerHeight;
+    renderer.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  render();
+
+  // ─── 加载全景图 ───
+  function loadPanorama(idx) {
+    if (idx === currentIdx || idx < 0 || idx >= panoramas.length) return;
+    currentIdx = idx;
+
+    const p = panoramas[idx];
+    document.getElementById('pano-loading').classList.remove('hidden');
+
+    // 更新场景名称
+    const titleEl = document.getElementById('scene-title');
+    titleEl.textContent = p.title || '';
+    titleEl.classList.toggle('show', !!p.title);
+
+    // 更新缩略图选中状态
+    document.querySelectorAll('.scene-thumb').forEach((el, i) => {
+      el.classList.toggle('active', i === idx);
+    });
+
+    // 加载纹理
+    loader.load(
+      'album/panoramas/' + p.file,
+      (tex) => {
+        tex.minFilter = THREE.LinearFilter;
+        sphere.material = new THREE.MeshBasicMaterial({ map: tex });
+        sphere.material.needsUpdate = true;
+        document.getElementById('pano-loading').classList.add('hidden');
+      },
+      undefined,
+      () => {
+        document.getElementById('pano-loading').classList.add('hidden');
+        console.warn('全景图加载失败:', p.file);
+      }
+    );
+
+    // 重置视角
+    lon = 0; lat = 0; targetLon = 0; targetLat = 0;
+    fov = 75; targetFov = 75;
+  }
+
+  // ─── 加载场景列表 ───
+  fetch('album/panoramas.json')
+    .then(r => r.json())
+    .then(data => {
+      panoramas = data.panoramas || [];
+      if (!panoramas.length) {
+        document.getElementById('pano-loading').style.display = 'none';
+        document.getElementById('pano-empty').style.display = 'flex';
+        return;
+      }
+      renderSceneBar();
+      loadPanorama(0);
+    })
+    .catch(() => {
+      document.getElementById('pano-loading').style.display = 'none';
+      document.getElementById('pano-empty').style.display = 'flex';
+    });
+
+  function renderSceneBar() {
+    const bar = document.getElementById('scene-bar');
+    bar.innerHTML = '';
+    panoramas.forEach((p, i) => {
+      const el = document.createElement('div');
+      el.className = 'scene-thumb' + (i === 0 ? ' active' : '');
+      el.innerHTML = p.thumb
+        ? `<img src="album/panoramas/${p.thumb}" alt="${p.title||''}" loading="lazy">`
+        : `<img src="album/panoramas/${p.file}" alt="${p.title||''}" loading="lazy">`;
+      el.innerHTML += `<div class="scene-label">${p.title || ('场景 ' + (i+1))}</div>`;
+      el.addEventListener('click', () => loadPanorama(i));
+      bar.appendChild(el);
+    });
+  }
+
+  // ─── 鼠标拖拽 ───
+  canvas.addEventListener('mousedown', e => {
+    isDragging = true; prevX = e.clientX; prevY = e.clientY;
+    canvas.style.cursor = 'grabbing';
+  });
+  window.addEventListener('mouseup', () => {
+    isDragging = false; canvas.style.cursor = 'grab';
+  });
+  window.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    targetLon -= (e.clientX - prevX) * 0.18;
+    targetLat += (e.clientY - prevY) * 0.15;
+    prevX = e.clientX; prevY = e.clientY;
+  });
+
+  // ─── 触摸拖拽 ───
+  let lastTouch = null, lastPinchDist = 0;
+  canvas.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) {
+      lastTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    } else if (e.touches.length === 2) {
+      lastPinchDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+    }
+    e.preventDefault();
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', e => {
+    if (e.touches.length === 1 && lastTouch) {
+      targetLon -= (e.touches[0].clientX - lastTouch.x) * 0.22;
+      targetLat += (e.touches[0].clientY - lastTouch.y) * 0.18;
+      lastTouch = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    } else if (e.touches.length === 2) {
+      const d = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const delta = lastPinchDist - d;
+      targetFov = Math.max(30, Math.min(100, targetFov + delta * 0.1));
+      lastPinchDist = d;
+    }
+    e.preventDefault();
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', () => { lastTouch = null; });
+
+  // ─── 滚轮缩放 ───
+  canvas.addEventListener('wheel', e => {
+    targetFov = Math.max(30, Math.min(100, targetFov + e.deltaY * 0.04));
+    e.preventDefault();
+  }, { passive: false });
+
+  // ─── 全屏 ───
+  document.getElementById('fullscreen-btn').addEventListener('click', () => {
+    const el = document.documentElement;
+    if (!document.fullscreenElement) {
+      el.requestFullscreen?.() || el.webkitRequestFullscreen?.();
+      document.getElementById('fullscreen-btn').textContent = '✕';
+    } else {
+      document.exitFullscreen?.() || document.webkitExitFullscreen?.();
+      document.getElementById('fullscreen-btn').textContent = '⛶';
+    }
+  });
+
+  // ─── 陀螺仪（移动端）───
+  let gyroAlpha0 = null, gyroBeta0 = null;
+  const gyroBtn = document.getElementById('gyro-btn');
+  gyroBtn.addEventListener('click', async () => {
+    if (!gyroEnabled) {
+      // iOS 13+ 需要权限
+      if (typeof DeviceOrientationEvent?.requestPermission === 'function') {
+        try {
+          const perm = await DeviceOrientationEvent.requestPermission();
+          if (perm !== 'granted') return;
+        } catch(e) { return; }
+      }
+      gyroEnabled = true;
+      gyroAlpha0 = null; gyroBeta0 = null;
+      gyroBtn.classList.add('active');
+      gyroBtn.title = '关闭陀螺仪';
+    } else {
+      gyroEnabled = false;
+      gyroBtn.classList.remove('active');
+      gyroBtn.title = '陀螺仪';
+    }
+  });
+
+  window.addEventListener('deviceorientation', e => {
+    if (!gyroEnabled) return;
+    if (gyroAlpha0 === null) { gyroAlpha0 = e.alpha; gyroBeta0 = e.beta; return; }
+    targetLon = -(e.alpha - gyroAlpha0) * 0.8;
+    targetLat = -(e.beta  - gyroBeta0)  * 0.5;
+  });
+
+  // 自动隐藏提示
+  setTimeout(() => {
+    const hint = document.getElementById('pano-hint');
+    if (hint) hint.style.display = 'none';
+  }, 4500);
+
+  canvas.style.cursor = 'grab';
+})();
+</script>
+</body>
+</html>

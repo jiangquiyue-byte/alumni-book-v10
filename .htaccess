@@ -1,0 +1,57 @@
+# ═══════════════════════════════════════════════
+#  同学录 · Apache 主目录 .htaccess
+# ═══════════════════════════════════════════════
+
+Options -Indexes
+ServerSignature Off
+
+# ── 开启 URL 重写 ──────────────────────────────
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # 阻止直接访问 data/ 目录的 JSON 文件（由 PHP API 代理读取）
+  RewriteRule ^data/students\.json$ - [F,L]
+</IfModule>
+
+# ── 安全头 ─────────────────────────────────────
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "same-origin"
+</IfModule>
+
+# ── 禁止访问敏感文件 ───────────────────────────
+<FilesMatch "\.(json|sql|log|env|bak|tmp)$">
+  <RequireAll>
+    Require all denied
+  </RequireAll>
+</FilesMatch>
+
+# 允许前端访问的 JSON 文件（前台 JS 需要直接读取）
+<Files "classmates.json">
+  Require all granted
+</Files>
+<Files "photos.json">
+  Require all granted
+</Files>
+<Files "panoramas.json">
+  Require all granted
+</Files>
+<Files "site_config.json">
+  Require all granted
+</Files>
+<Files "site_settings.json">
+  Require all granted
+</Files>
+<Files "custom_particles.json">
+  Require all granted
+</Files>
+
+# ── PHP 配置 ───────────────────────────────────
+<IfModule mod_php.c>
+  php_value upload_max_filesize 100M
+  php_value post_max_size 105M
+  php_value memory_limit 512M
+  php_value max_execution_time 300
+</IfModule>

@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>同学录 · 前言</title>
+<!--
+  Layer 1: .background-layer  纸张纹理背景
+  Layer 2: .sticker-layer     装饰贴纸层（可在此添加贴纸）
+  Layer 3: .form-layer        页面主内容
+  Layer 4: .overlay-effect-layer  樱花飘落等粒子效果
+-->
+<link rel="stylesheet" href="assets/css/common.css">
+<style>
+  html, body { overflow-x: hidden; overflow-y: auto; }
+
+  /* ── 前言页专属样式 ── */
+  .preface-wrap {
+    position: relative;
+    z-index: var(--z-form);
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 88px 32px 70px;
+  }
+
+  .preface-header { text-align: center; margin-bottom: 48px; }
+  .preface-label {
+    font-family: 'ZCOOL XiaoWei', serif;
+    font-size: 11px; letter-spacing: 0.8em;
+    color: rgba(120,80,30,0.45); text-transform: uppercase; margin-bottom: 14px;
+  }
+  .preface-title {
+    font-family: 'Ma Shan Zheng', cursive; font-size: 48px;
+    color: var(--ink); line-height: 1.4;
+    text-shadow: 1px 2px 4px rgba(0,0,0,0.06); margin-bottom: 10px;
+  }
+  .preface-subtitle {
+    font-family: 'Noto Serif SC', serif; font-weight: 300;
+    font-size: 13px; color: rgba(80,50,20,0.45); letter-spacing: 0.15em;
+  }
+
+  /* 正文排版 */
+  .preface-text {
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 700; font-size: 16px; color: #1a1a1a;
+    line-height: 2.5; text-indent: 2em; text-align: justify;
+    letter-spacing: 0.03em; padding: 24px 20px;
+    background: rgba(255,255,255,0.18); border-radius: 4px;
+    margin-bottom: 30px;
+  }
+  .preface-text.placeholder {
+    font-weight: 400; font-size: 14px;
+    color: rgba(120,80,30,0.32);
+    border: 1px dashed rgba(160,120,60,0.22);
+    text-indent: 0; text-align: center;
+    font-style: italic; line-height: 2.4;
+    background: rgba(255,255,255,0.14);
+  }
+
+  .section-divider { text-align: center; margin: 44px 0; color: rgba(140,90,30,0.25); font-size: 14px; letter-spacing: 1em; }
+
+  /* 致谢区域 */
+  .acknowledgment { margin-top: 56px; padding-top: 38px; border-top: 1px solid rgba(160,120,60,0.18); }
+  .ack-title { font-family: 'Ma Shan Zheng', cursive; font-size: 28px; color: var(--ink); text-align: center; margin-bottom: 28px; }
+  .ack-section-label {
+    font-family: 'ZCOOL XiaoWei', serif; font-size: 11px;
+    letter-spacing: 0.5em; color: rgba(120,80,30,0.4);
+    text-align: center; margin: 28px 0 14px;
+  }
+
+  .ack-people { display: flex; justify-content: center; flex-wrap: wrap; gap: 28px; margin-bottom: 18px; }
+  .ack-person { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 7px; }
+  .ack-avatar {
+    width: 58px; height: 58px; border-radius: 50%;
+    border: 2px solid rgba(160,120,60,0.25);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(201,168,76,0.28), rgba(122,74,30,0.18));
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ack-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .ack-avatar .avatar-placeholder { font-family: 'Ma Shan Zheng', cursive; font-size: 24px; color: var(--book-light); }
+  .person-name { font-family: 'Ma Shan Zheng', cursive; font-size: 20px; color: var(--ink); letter-spacing: 0.1em; }
+  .person-role { font-family: 'Noto Serif SC', serif; font-size: 11px; color: rgba(80,50,20,0.45); }
+
+  /* 开发者 */
+  .dev-section { margin-top: 36px; padding-top: 28px; border-top: 1px dashed rgba(160,120,60,0.18); }
+  .dev-list { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .dev-item { display: flex; align-items: center; gap: 12px; }
+  .dev-icon { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(160,120,60,0.2); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .dev-icon.main { width: 44px; height: 44px; border-width: 2px; }
+  .dev-name { font-family: 'Noto Serif SC', serif; font-size: 14px; color: var(--ink-light); letter-spacing: 0.05em; }
+  .dev-role { font-size: 11px; color: rgba(80,50,20,0.4); margin-left: 4px; }
+  .dev-item.main-dev .dev-name { font-family: 'Ma Shan Zheng', cursive; font-size: 18px; color: var(--ink); }
+
+  /* 底部按钮 */
+  .bottom-actions { margin-top: 56px; padding-top: 38px; border-top: 1px solid rgba(160,120,60,0.18); display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
+  .btn-secondary {
+    background: linear-gradient(160deg, rgba(92,48,16,0.12) 0%, rgba(61,30,8,0.08) 100%) !important;
+    color: var(--book-light) !important;
+    border: 1px solid rgba(180,130,50,0.25) !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.3) !important;
+  }
+
+  /* ── 头像弹跳效果 ── */
+  .bounceable {
+    cursor: pointer;
+    transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+    user-select: none;
+  }
+  .bounceable:hover {
+    transform: scale(1.08) translateY(-2px);
+    box-shadow: 0 6px 18px rgba(80,40,10,0.2) !important;
+  }
+
+  /* 弹跳关键帧动画 */
+  @keyframes avatarBounce {
+    0%   { transform: scale(1)    translateY(0px); }
+    15%  { transform: scale(1.18) translateY(-12px); }
+    30%  { transform: scale(0.93) translateY(4px); }
+    45%  { transform: scale(1.10) translateY(-7px); }
+    60%  { transform: scale(0.97) translateY(2px); }
+    75%  { transform: scale(1.04) translateY(-3px); }
+    88%  { transform: scale(0.99) translateY(1px); }
+    100% { transform: scale(1)    translateY(0px); }
+  }
+  .bounceable.bouncing {
+    animation: avatarBounce 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  /* AI 图标弹跳（小尺寸微调） */
+  @keyframes iconBounce {
+    0%   { transform: scale(1)    translateY(0px) rotate(0deg); }
+    18%  { transform: scale(1.28) translateY(-14px) rotate(-8deg); }
+    35%  { transform: scale(0.9)  translateY(5px)  rotate(5deg); }
+    52%  { transform: scale(1.14) translateY(-7px)  rotate(-4deg); }
+    68%  { transform: scale(0.96) translateY(2px)  rotate(2deg); }
+    82%  { transform: scale(1.05) translateY(-3px)  rotate(-1deg); }
+    100% { transform: scale(1)    translateY(0px)  rotate(0deg); }
+  }
+  .icon-bounceable {
+    cursor: pointer;
+    transition: transform 0.15s ease-out, filter 0.15s ease-out;
+    user-select: none;
+  }
+  .icon-bounceable:hover {
+    transform: scale(1.15) translateY(-2px);
+    filter: drop-shadow(0 4px 8px rgba(80,40,10,0.25));
+  }
+  .icon-bounceable.bouncing {
+    animation: iconBounce 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  /* 气泡提示 */
+  .bounce-tip {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%) scale(0.6);
+    background: rgba(74,44,15,0.92);
+    color: var(--gold-pale);
+    font-family: 'ZCOOL XiaoWei', serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    padding: 5px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.22,1,0.36,1);
+    border: 1px solid rgba(201,168,76,0.3);
+    z-index: 99;
+  }
+  .bounce-tip.show {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+  /* 气泡小三角 */
+  .bounce-tip::after {
+    content: '';
+    position: absolute;
+    top: 100%; left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: rgba(74,44,15,0.92);
+  }
+
+  /* 让头像容器支持 position:relative（用于气泡定位） */
+  .ack-person { position: relative; }
+  .dev-item   { position: relative; }
+</style>
+</head>
+<body>
+
+<!-- ══ Layer 1: Background UI Layer ══ -->
+<div class="background-layer">
+  <!-- Layer 2: Sticker Layer (nested as child of background) -->
+  <div class="sticker-layer">
+  <!--
+    ★ 在此处添加前言页装饰贴纸 ★
+    例：
+    <img class="sticker sticker--float" src="assets/images/stickers/flower.png"
+         style="top: 15%; right: 4%; width: 70px; --r: 15deg;" alt="">
+    <img class="sticker sticker--sway" src="assets/images/stickers/ribbon.png"
+         style="top: 40%; left: 2%; width: 50px; --r: -10deg;" alt="">
+  -->
+  </div>
+</div>
+
+<!-- ══ Layer 3: Form/Content Layer ══ -->
+<div class="form-layer">
+  <div class="watermark">前言</div>
+
+  <!-- 导航栏 -->
+  <nav class="top-nav">
+    <div class="user-greeting" id="user-greeting">同学你好</div>
+    <div class="nav-links">
+      <a class="nav-link active" href="preface.html">前言</a>
+      <a class="nav-link" href="roster.html">同学录</a>
+      <a class="nav-link" href="album.html">相册</a>
+    </div>
+  </nav>
+
+  <div class="preface-wrap">
+
+    <!-- 标题 -->
+    <div class="preface-header fade-in">
+      <div class="ornament-line">❦ 前 言 ❦</div>
+      <p class="preface-label">· PREFACE ·</p>
+      <h1 class="preface-title" id="preface-title">致青春岁月</h1>
+      <p class="preface-subtitle" id="preface-subtitle">写在翻开同学录之前</p>
+    </div>
+
+    <p class="preface-text fade-in" id="preface-content">
+      闲暇之余，我做了这款同学录网页。<br>
+      传统纸质同学录容易弄丢、破损泛黄，想给大家留一份不会消失的青春回忆。<br>
+      把时光、真心祝福都好好存起来，让这份属于我们的记忆，一直都在，永远鲜活。
+    </p>
+
+    <div class="section-divider fade-in">· · · · ·</div>
+
+    <!-- 特别致谢 -->
+    <div class="acknowledgment fade-in">
+      <h2 class="ack-title">特别致谢</h2>
+
+      <div class="ack-section-label">· 致谢人物 ·</div>
+      <div class="ack-people" id="ack-people">
+        <!-- 由 JS 从 site_config.json 动态渲染 -->
+      </div>
+
+      <!-- 开发团队 -->
+      <div class="dev-section">
+        <div class="ack-section-label">· 开发团队 ·</div>
+        <div class="dev-list">
+          <div class="dev-item main-dev">
+            <img class="dev-icon main bounceable" data-tip="主要开发者 🛠️"
+                 src="assets/dev/developer.jpg" alt="" onerror="this.style.display='none'">
+            <div>
+              <span class="dev-name">【示例账号】</span>
+              <span class="dev-role">· 主要开发者</span>
+            </div>
+          </div>
+          <div class="ack-section-label" style="margin: 16px 0 8px;">· 协作开发 AI ·</div>
+          <div class="dev-item">
+            <a href="https://www.doubao.com" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;text-decoration:none;color:inherit;gap:12px;">
+              <img class="dev-icon icon-bounceable" data-tip="豆包 · 字节跳动 🤖"
+                   src="assets/icons/doubao.png" alt="豆包" onerror="this.style.display='none'">
+              <div>
+                <span class="dev-name" style="border-bottom:1px dashed rgba(120,80,30,0.3);padding-bottom:1px;">豆包</span>
+                <span class="dev-role">· 字节跳动</span>
+              </div>
+            </a>
+          </div>
+          <div class="dev-item">
+            <a href="https://manus.im" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;text-decoration:none;color:inherit;gap:12px;">
+              <img class="dev-icon icon-bounceable" data-tip="Manus · 通用 AI 智能体 🌐"
+                   src="assets/icons/manus.png" alt="Manus" onerror="this.style.display='none'">
+              <div>
+                <span class="dev-name" style="border-bottom:1px dashed rgba(120,80,30,0.3);padding-bottom:1px;">Manus</span>
+                <span class="dev-role">· 通用 AI 智能体</span>
+              </div>
+            </a>
+          </div>
+          <div class="dev-item">
+            <a href="https://gemini.google.com" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;text-decoration:none;color:inherit;gap:12px;">
+              <img class="dev-icon icon-bounceable" data-tip="Gemini · Google AI ✨"
+                   src="assets/icons/gemini.jpg" alt="Gemini" onerror="this.style.display='none'">
+              <div>
+                <span class="dev-name" style="border-bottom:1px dashed rgba(120,80,30,0.3);padding-bottom:1px;">Gemini</span>
+                <span class="dev-role">· Google AI</span>
+              </div>
+            </a>
+          </div>
+          <div class="dev-item">
+            <a href="https://claude.ai" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;text-decoration:none;color:inherit;gap:12px;">
+              <img class="dev-icon icon-bounceable" data-tip="Claude · Anthropic 🧡"
+                   src="assets/icons/claude.jpg" alt="Claude" onerror="this.style.display='none'">
+              <div>
+                <span class="dev-name" style="border-bottom:1px dashed rgba(120,80,30,0.3);padding-bottom:1px;">Claude</span>
+                <span class="dev-role">· Anthropic</span>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部按钮 -->
+    <div class="bottom-actions fade-in">
+      <a href="album.html" class="btn">进入班级相册</a>
+      <a href="roster.html" class="btn btn-secondary">进入同学录主页</a>
+    </div>
+
+    <div class="page-footer" id="page-footer">同学录 · 青春回忆</div>
+
+  </div>
+</div>
+
+<!-- ══ Layer 4: Overlay Effect Layer（粒子飘落） ══ -->
+<div class="overlay-effect-layer"></div>
+
+<script src="assets/js/common.js?v=10.0.0"></script>
+<script src="assets/js/overlay.js?v=10.0.0"></script>
+<script>
+(function () {
+  const name = Session.getName();
+  if (!name) return;
+  Session.renderGreeting('#user-greeting');
+
+  // 从站点配置读取所有动态内容
+  fetch('data/site_config.json')
+    .then(function(r){ return r.json(); })
+    .then(function(s){
+      // 粒子效果
+      var pcfg = (s.particles && s.particles['preface']) || {enabled:true, preset:'sakura'};
+      if (pcfg.enabled) {
+        var preset = OverlayPresets[pcfg.preset] || OverlayPresets.sakura;
+        if (preset) Overlay.init(preset);
+      }
+
+      // 前言标题和正文
+      if (s.preface) {
+        var titleEl = document.getElementById('preface-title');
+        var subEl   = document.getElementById('preface-subtitle');
+        var contentEl = document.getElementById('preface-content');
+        if (titleEl && s.preface.title) titleEl.textContent = s.preface.title;
+        if (subEl && s.preface.subtitle) subEl.textContent = s.preface.subtitle;
+        if (contentEl && s.preface.content) contentEl.innerHTML = s.preface.content.replace(/\n/g, '<br>');
+      }
+
+      // 致谢人物
+      var ackPeople = document.getElementById('ack-people');
+      if (ackPeople && s.acknowledgments && s.acknowledgments.length) {
+        var validAcks = s.acknowledgments.filter(function(a){ return a.name && a.name.trim(); });
+        if (!validAcks.length) { ackPeople.style.display='none'; }
+        else { ackPeople.innerHTML = validAcks.map(function(a) {
+          var initial = (a.name || '?').charAt(0);
+          var avatarInner = a.avatar
+            ? '<img src="/' + a.avatar.replace(/^\//, '') + '" alt="' + (a.name || '') + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
+              + '<span class="avatar-placeholder" style="display:none">' + initial + '</span>'
+            : '<span class="avatar-placeholder">' + initial + '</span>';
+          return '<div class="ack-person">'
+            + '<div class="ack-avatar bounceable" data-tip="' + (a.tip || a.name || '') + '">'
+            + avatarInner
+            + '</div>'
+            + '<div class="person-name">' + (a.name || '') + '</div>'
+            + '<div class="person-role">' + (a.role || '') + '</div>'
+            + '</div>';
+        }).join(''); }
+      }
+
+      // 底部备案
+      var footer = document.getElementById('page-footer');
+      if (footer && s.footer) {
+        var html = s.footer.copyright || '同学录 · 青春回忆';
+        if (s.footer.beian) {
+          html += '<br><a href="' + (s.footer.beianUrl || 'https://beian.miit.gov.cn/') + '" target="_blank" style="color:rgba(120,80,30,0.35);font-size:11px;text-decoration:none;">' + s.footer.beian + '</a>';
+        }
+        footer.innerHTML = html;
+      }
+      // 应用全局字体配置
+      applyTypography(s.typography);
+    })
+    .catch(function(){ Overlay.init(OverlayPresets.sakura); });
+
+  function applyTypography(typo) {
+    if (!typo || typo.fontFamily === 'default' || !typo.fontFamily) return;
+    var ff = typo.fontFamily;
+    var fs = parseInt(typo.fontSize) || 15;
+    var fontUrls = {
+      'Ma Shan Zheng': 'https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap',
+      'ZCOOL XiaoWei': 'https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&display=swap',
+      'Noto Serif SC': 'https://fonts.googleapis.com/css2?family=Noto+Serif+SC&display=swap',
+      'Noto Sans SC':  'https://fonts.googleapis.com/css2?family=Noto+Sans+SC&display=swap',
+      'ZCOOL QingKe HuangYou': 'https://fonts.googleapis.com/css2?family=ZCOOL+QingKe+HuangYou&display=swap',
+      'Liu Jian Mao Cao': 'https://fonts.googleapis.com/css2?family=Liu+Jian+Mao+Cao&display=swap',
+    };
+    if (fontUrls[ff]) {
+      var link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = fontUrls[ff];
+      document.head.appendChild(link);
+    }
+    document.body.style.fontFamily = '"' + ff + '", sans-serif';
+    document.body.style.fontSize   = fs + 'px';
+    document.documentElement.style.setProperty('--global-font', '"' + ff + '", sans-serif');
+    document.documentElement.style.setProperty('--global-font-size', fs + 'px');
+  }
+
+  // Layer 3: 滚动淡入
+  FadeIn.revealAll('.fade-in', 200, 180);
+
+  Ripple.bindAll();
+
+  /* ══════════════════════════════════════
+     头像 & AI图标 弹跳点击效果
+     ══════════════════════════════════════ */
+
+  /**
+   * 给元素绑定点击弹跳 + 气泡提示
+   * @param {Element} el        - 要弹跳的元素
+   * @param {string}  tipText   - 气泡提示文字（来自 data-tip）
+   * @param {string}  animClass - 动画 class 名
+   */
+  function bindBounce(el, tipText, animClass) {
+    // 创建气泡 tip（挂到 el 的父级，避免溢出裁剪）
+    const parent = el.closest('.ack-person, .dev-item') || el.parentElement;
+    parent.style.position = 'relative';
+
+    const tip = document.createElement('div');
+    tip.className = 'bounce-tip';
+    tip.textContent = tipText;
+    parent.appendChild(tip);
+
+    let tipTimer = null;
+
+    el.addEventListener('click', function (e) {
+      // 防止动画叠加：先移除再添加
+      el.classList.remove(animClass);
+      void el.offsetWidth; // reflow 触发重新计算
+      el.classList.add(animClass);
+
+      // 动画结束后移除 class
+      const onEnd = () => {
+        el.classList.remove(animClass);
+        el.removeEventListener('animationend', onEnd);
+      };
+      el.addEventListener('animationend', onEnd);
+
+      // 显示气泡
+      tip.classList.add('show');
+      clearTimeout(tipTimer);
+      tipTimer = setTimeout(() => tip.classList.remove('show'), 1600);
+
+      e.stopPropagation();
+    });
+  }
+
+  // 绑定致谢人物头像（大圆）
+  document.querySelectorAll('.ack-avatar.bounceable').forEach(el => {
+    const tipText = el.dataset.tip || '✦';
+    bindBounce(el, tipText, 'bouncing');
+  });
+
+  // 绑定开发者大头像
+  document.querySelectorAll('.dev-icon.bounceable').forEach(el => {
+    const tipText = el.dataset.tip || '开发者 ✦';
+    bindBounce(el, tipText, 'bouncing');
+  });
+
+  // 绑定 AI 小图标
+  document.querySelectorAll('.dev-icon.icon-bounceable').forEach(el => {
+    const tipText = el.dataset.tip || '✦';
+    bindBounce(el, tipText, 'bouncing');
+  });
+
+})();
+</script>
+</body>
+</html>
