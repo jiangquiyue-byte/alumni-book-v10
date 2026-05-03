@@ -6,7 +6,7 @@
 
 ## 📢 开源说明与作者信息
 
-本项目由 **无间雨** 重新开启并开源。欢迎大家下载、使用及进行二次开发。
+本项目由 **无间雨** 重新开启并开源。欢迎大家下载、使用及进行二次开发。您也可以直接下载原始 [ZIP 压缩包](alumni_book_v10_source.zip)。
 
 *   **开发者**: 无间雨
 *   **联系邮箱**: [qiu_xi@outlook.com](mailto:qiu_xi@outlook.com)
@@ -91,7 +91,8 @@ site/
 │   │   └── overlay.js
 │   └── images/
 │       ├── overlays/
-│       └── donate/
+│       ├── donate/
+│       └── alumni_book_v10_source.zip
 ├── data/
 │   ├── students.json
 │   ├── classmates.json
