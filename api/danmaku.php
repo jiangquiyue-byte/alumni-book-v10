@@ -42,6 +42,8 @@ function cleanText($text) {
     $text = trim($text);
     $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $text);
     $text = preg_replace('/\s+/u', ' ', $text);
+    // 强制过滤 HTML 标签，防止 XSS
+    $text = strip_tags($text);
     return trim($text);
 }
 

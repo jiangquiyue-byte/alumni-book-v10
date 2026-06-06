@@ -195,8 +195,25 @@ if ($method === 'PUT') {
     $data = loadStudents();
 
     $found = false;
+    $oldSlug = '';
+    $oldName = '';
+
+    // 预检：如果要修改姓名，检查是否与其他学生重名
+    if (isset($body['name'])) {
+        $newName = trim($body['name']);
+        if (!$newName) jsonResponse(['success' => false, 'message' => '姓名不能为空'], 400);
+        foreach ($data['students'] as $s) {
+            if ($s['id'] !== $id && $s['name'] === $newName) {
+                jsonResponse(['success' => false, 'message' => '已存在同名学生'], 409);
+            }
+        }
+    }
+
     foreach ($data['students'] as &$s) {
         if ($s['id'] === $id) {
+            $oldSlug = $s['slug'] ?? '';
+            $oldName = $s['name'] ?? '';
+
             // 合并更新（深度合并 info 字段）
             foreach ($body as $key => $val) {
                 if ($key === 'info' && is_array($val)) {
@@ -222,10 +239,20 @@ if ($method === 'PUT') {
         jsonResponse(['success' => false, 'message' => '保存 students.json 失败，路径: ' . STUDENTS_JSON], 500);
     }
 
+    // 处理 Slug 变更导致的老文件清理
+    $newSlug = $updatedStudent['slug'] ?? '';
+    if ($oldSlug && $newSlug && $oldSlug !== $newSlug) {
+        $oldFile = DIR_STUDENTS . $oldSlug . '.html';
+        if (file_exists($oldFile)) @unlink($oldFile);
+    }
+
     // 重新生成页面
     require_once dirname(__FILE__) . '/generate.php';
     $genResult = generateStudentPage($updatedStudent);
     $warn = $genResult ? '' : '（警告：页面重新生成失败，请检查 students/ 目录权限）';
+
+    // 同步 classmates.json（处理更名/换Slug）
+    syncClassmates($data['students'], $oldName);
 
     jsonResponse(['success' => true, 'student' => $updatedStudent, 'message' => '保存成功' . $warn]);
 }
@@ -337,9 +364,9 @@ if ($method === 'DELETE') {
 }
 
 // ── 同步 classmates.json ──
-function syncClassmates($students) {
+function syncClassmates($students, $removeOldName = null) {
     $cmFile   = CLASSMATES_JSON;
-    $existing = file_exists($cmFile) ? (json_decode(file_get_contents($cmFile), true) ?? []) : [];
+    $existing = file_exists($cmFile) ? (json_decode(file_get_contents($cmFile), true) ?? []) : ['classmates' => [], 'slugs' => [], 'pages' => []];
 
     $studentNames = array_map(function($s) { return $s['name']; }, $students);
     $studentSlugs = [];
@@ -347,18 +374,30 @@ function syncClassmates($students) {
         if (!empty($s['slug'])) $studentSlugs[$s['name']] = $s['slug'];
     }
 
-    $existingNames = $existing['classmates'] ?? [];
-    $merged = $existingNames;
+    // 如果指定了旧姓名（更名场景），先从现有列表中移除
+    if ($removeOldName) {
+        $existing['classmates'] = array_values(array_diff($existing['classmates'] ?? [], [$removeOldName]));
+        $existing['pages'] = array_values(array_diff($existing['pages'] ?? [], [$removeOldName]));
+        unset($existing['slugs'][$removeOldName]);
+    }
+
+    $mergedNames = $existing['classmates'] ?? [];
     foreach ($studentNames as $n) {
-        if (!in_array($n, $merged)) $merged[] = $n;
+        if (!in_array($n, $mergedNames)) $mergedNames[] = $n;
+    }
+
+    // 确保 pages 列表也同步更新
+    $mergedPages = $existing['pages'] ?? [];
+    foreach ($studentNames as $n) {
+        if (!in_array($n, $mergedPages)) $mergedPages[] = $n;
     }
 
     $mergedSlugs = array_merge($existing['slugs'] ?? [], $studentSlugs);
 
     $data = [
-        'classmates' => array_values($merged),
+        'classmates' => array_values($mergedNames),
         'slugs'      => $mergedSlugs,
-        'pages'      => $existing['pages'] ?? [],
+        'pages'      => array_values($mergedPages),
         '_comment'   => '由后台管理系统自动维护',
     ];
     return writeJson($cmFile, $data);

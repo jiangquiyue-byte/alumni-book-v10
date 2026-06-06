@@ -180,7 +180,7 @@ function generateStudentPage($student) {
     $showcaseHtml = '';
     foreach ($stickers as $sticker) {
         if (empty($sticker['file'])) continue;
-        $src     = '../' . ltrim($sticker['file'], '/');
+        $src     = '../' . ltrim(hesc($sticker['file']), '/');
         $top     = isset($sticker['top']) ? 'top:' . hesc($sticker['top']) . ';' : '';
         $left    = isset($sticker['left']) ? 'left:' . hesc($sticker['left']) . ';' : '';
         $right   = isset($sticker['right']) ? 'right:' . hesc($sticker['right']) . ';' : '';
