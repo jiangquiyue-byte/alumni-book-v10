@@ -1,6 +1,6 @@
 <?php
 /**
- * 同学录后台 · API 全局初始化 · v10.0
+ * 同学录后台 · API 全局初始化 · v10.5
  * 所有 API 入口文件都必须在最开头引入此文件
  * 确保任何 PHP 错误/异常都以 JSON 格式返回
  */
@@ -65,7 +65,41 @@ register_shutdown_function(function() {
 // ── 7. 开启输出缓冲（防止意外输出破坏 JSON）──
 ob_start();
 
-// ── 8. HTTP 方法覆盖（解决 Nginx 不转发 DELETE/PUT）──
+// ── 8. CSRF 防护（简单验证 Referer/Origin，防止跨站请求）──
+if (in_array($_SERVER['REQUEST_METHOD'], ['POST', 'PUT', 'DELETE'])) {
+    $referer = $_SERVER['HTTP_REFERER'] ?? '';
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    $host = $_SERVER['HTTP_HOST'] ?? '';
+
+    // 简单的 Referer 检查，确保请求来自本站
+    // 如果没有 Referer 且没有 Origin，且不是来自命令行，则可能存在风险
+    if (PHP_SAPI !== 'cli') {
+        $allowed = false;
+
+        // 解析当前 Host 供对比
+        $hostParts = explode(':', $host);
+        $currentDomain = $hostParts[0];
+
+        if ($origin) {
+            $originHost = parse_url($origin, PHP_URL_HOST);
+            if ($originHost === $currentDomain) $allowed = true;
+        }
+
+        if (!$allowed && $referer) {
+            $refererHost = parse_url($referer, PHP_URL_HOST);
+            if ($refererHost === $currentDomain) $allowed = true;
+        }
+
+        // 如果有来源但都不匹配当前域名，则拒绝
+        if (!$allowed && ($origin || $referer)) {
+             http_response_code(403);
+             echo json_encode(['success' => false, 'message' => 'CSRF 验证失败：非法来源请求'], JSON_UNESCAPED_UNICODE);
+             exit;
+        }
+    }
+}
+
+// ── 9. HTTP 方法覆盖（解决 Nginx 不转发 DELETE/PUT）──
 // 支持三种方式：URL参数 > Header > POST字段
 $_REAL_METHOD = $_SERVER['REQUEST_METHOD'];
 if ($_REAL_METHOD === 'POST') {
@@ -87,13 +121,13 @@ if ($_REAL_METHOD === 'POST') {
     }
 }
 
-// ── 9. 预检 PHP 扩展 ──
+// ── 10. 预检 PHP 扩展 ──
 if (!extension_loaded('fileinfo')) {
     define('FILEINFO_MISSING', true);
 }
 
 
-// ── 10. 数据自愈机制 ──
+// ── 11. 数据自愈机制 ──
 // 检测 students/ 下的HTML文件，如果JSON数据库中缺失则自动补回
 function autoHealData() {
     if (!defined('ROOT_PATH')) return;

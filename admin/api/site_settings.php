@@ -26,6 +26,8 @@ if ($method === 'GET') {
 
 if ($method === 'PUT') {
     $body = json_decode(file_get_contents('php://input'), true);
+    if (!$body) jsonResponse(['success' => false, 'message' => '数据格式错误'], 400);
+
     $settings = readSettings();
 
     // 首页粒子设置
@@ -34,6 +36,13 @@ if ($method === 'PUT') {
             'enabled' => (bool)($body['index_particle']['enabled'] ?? true),
             'preset'  => trim($body['index_particle']['preset'] ?? 'sakura'),
         ];
+    }
+
+    // 支持更新其他可能的设置字段，而不只是 index_particle
+    foreach ($body as $key => $value) {
+        if ($key !== 'index_particle' && $key !== 'admin_password_hash' && $key !== 'password_updated_at') {
+            $settings[$key] = $value;
+        }
     }
 
     writeJson(SITE_SETTINGS_JSON, $settings);

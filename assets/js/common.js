@@ -1,5 +1,5 @@
 /**
- * 同学录 v10.0 · 公共 JavaScript 工具库
+ * 同学录 v10.5 · 公共 JavaScript 工具库
  *
  * 模块列表：
  *  - Layers     四层结构初始化

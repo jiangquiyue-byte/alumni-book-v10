@@ -1,13 +1,13 @@
 <?php
 /**
- * 同学录 v10.0 · 一键部署配置
+ * 同学录 v10.5 · 一键部署配置
  * 访问此页面自动配置服务器环境
  * 配置完成后请删除此文件
  */
 header('Content-Type: text/html; charset=utf-8');
 $root = dirname(dirname(__FILE__)) . '/';
 echo "<pre style='font-family:monospace;background:#111;color:#e0d8cc;padding:20px;max-width:700px;margin:20px auto;border-radius:8px;line-height:2;'>\n";
-echo "===== 同学录 v10.0 一键部署 =====\n\n";
+echo "===== 同学录 v10.5 一键部署 =====\n\n";
 
 // 1. 创建必要目录
 $dirs = [
