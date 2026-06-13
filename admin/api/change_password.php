@@ -33,14 +33,20 @@ if (mb_strlen($newPassword) > 64) {
     jsonResponse(['success' => false, 'message' => '新密码长度不能超过 64 位'], 400);
 }
 
-// ── 读取当前密码（优先读取 site_settings.json 中的哈希，降级到 config.php 明文常量）──
+// ── 读取当前密码 ──
 $settingsPath = ROOT_PATH . 'data/site_settings.json';
 $settings = readJson($settingsPath) ?: [];
 $storedHash = $settings['admin_password_hash'] ?? null;
 
+$oldValid = false;
 if ($storedHash) {
-    // 已迁移到 bcrypt 哈希
+    // 优先验证 bcrypt 哈希
     $oldValid = password_verify($oldPassword, $storedHash);
+
+    // 如果哈希验证失败，但输入密码等同于常量，并且发现常量不是 'admin888'（说明已经被手动修改）
+    if (!$oldValid && $oldPassword === ADMIN_PASSWORD && ADMIN_PASSWORD !== 'admin888') {
+        $oldValid = true;
+    }
 } else {
     // 首次修改：对比 config.php 明文常量
     $oldValid = ($oldPassword === ADMIN_PASSWORD);
